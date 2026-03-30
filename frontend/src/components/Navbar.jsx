@@ -21,7 +21,7 @@ export default function Navbar() {
               d={mobileNavOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'} />
           </svg>
         </button>
-        <span className="md:hidden font-bold text-gray-900 dark:text-white">StudyTracker</span>
+        <span className="md:hidden font-extrabold text-gray-900 dark:text-white tracking-tight">Study<span className="text-primary-600">Tracker</span></span>
       </div>
 
       {/* Page title placeholder (desktop) */}
@@ -34,14 +34,18 @@ export default function Navbar() {
           <button
             id="profile-menu-btn"
             onClick={() => setMenuOpen(!menuOpen)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+            className="flex items-center gap-2 p-1 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-300 border border-transparent hover:border-gray-200 dark:hover:border-gray-700"
           >
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-700 flex items-center justify-center text-white text-sm font-bold">
-              {user?.name?.[0]?.toUpperCase() || 'U'}
+            <div className="w-8 h-8 rounded-xl overflow-hidden bg-gradient-to-br from-primary-400 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0 border border-white dark:border-gray-700">
+              {user?.avatar ? (
+                <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+              ) : (
+                user?.name?.[0]?.toUpperCase() || 'U'
+              )}
             </div>
-            <span className="hidden sm:block text-sm font-medium text-gray-700 dark:text-gray-300">{user?.name}</span>
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            <span className="hidden sm:block text-sm font-semibold text-gray-700 dark:text-gray-300 pr-1">{user?.name}</span>
+            <svg className={`w-4 h-4 text-gray-400 transition-transform duration-300 ${menuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
 

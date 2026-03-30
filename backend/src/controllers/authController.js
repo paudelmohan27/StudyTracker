@@ -42,6 +42,7 @@ const register = async (req, res, next) => {
         name: user.name,
         email: user.email,
         darkMode: user.darkMode,
+        avatar: user.avatar,
       },
     });
   } catch (error) {
@@ -84,6 +85,7 @@ const login = async (req, res, next) => {
         name: user.name,
         email: user.email,
         darkMode: user.darkMode,
+        avatar: user.avatar,
       },
     });
   } catch (error) {
@@ -103,6 +105,7 @@ const getMe = async (req, res) => {
       name: req.user.name,
       email: req.user.email,
       darkMode: req.user.darkMode,
+      avatar: req.user.avatar,
     },
   });
 };
@@ -113,13 +116,23 @@ const getMe = async (req, res) => {
  */
 const updatePreferences = async (req, res, next) => {
   try {
-    const { darkMode, name } = req.body;
+    const { darkMode, name, avatar } = req.body;
     const updateFields = {};
     if (typeof darkMode === 'boolean') updateFields.darkMode = darkMode;
     if (name) updateFields.name = name;
+    if (avatar !== undefined) updateFields.avatar = avatar;
 
     const user = await User.findByIdAndUpdate(req.user._id, updateFields, { new: true });
-    res.json({ success: true, user: { id: user._id, name: user.name, email: user.email, darkMode: user.darkMode } });
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        darkMode: user.darkMode,
+        avatar: user.avatar,
+      },
+    });
   } catch (error) {
     next(error);
   }

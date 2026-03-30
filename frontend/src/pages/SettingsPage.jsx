@@ -5,9 +5,25 @@ export default function SettingsPage() {
   const { user, updatePreferences, logout } = useAuth();
   const [name, setName]       = useState(user?.name || '');
   const [darkMode, setDarkMode] = useState(user?.darkMode || false);
-  const [saving, setSaving]   = useState(false);
-  const [saved, setSaved]     = useState(false);
-  const [error, setError]     = useState('');
+  const [avatar, setAvatar]     = useState(user?.avatar || '');
+  const [saving, setSaving]     = useState(false);
+  const [saved, setSaved]       = useState(false);
+  const [error, setError]       = useState('');
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 1024 * 1024) { // 1MB limit for base64
+        setError('Image must be less than 1MB');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatar(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -15,7 +31,7 @@ export default function SettingsPage() {
     setError('');
     setSaved(false);
     try {
-      await updatePreferences({ name, darkMode });
+      await updatePreferences({ name, darkMode, avatar });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch {
@@ -28,27 +44,40 @@ export default function SettingsPage() {
   const handleDarkToggle = async (val) => {
     setDarkMode(val);
     try {
-      await updatePreferences({ darkMode: val });
+      await updatePreferences({ darkMode: val, name, avatar });
     } catch {}
   };
 
   return (
-    <div className="space-y-6 max-w-xl animate-fade-in">
+    <div className="space-y-6 max-w-xl animate-fade-in pb-12">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Manage your account preferences</p>
+        <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">Settings</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">Manage your account preferences and profile</p>
       </div>
 
       {/* Profile */}
-      <div className="card">
-        <h2 className="font-bold text-gray-900 dark:text-white mb-4">👤 Profile</h2>
-        <div className="flex items-center gap-4 mb-6">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-400 to-primary-700 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
-            {user?.name?.[0]?.toUpperCase()}
+      <div className="card overflow-hidden">
+        <div className="flex items-center gap-6 mb-8">
+          <div className="relative group">
+            <div className="w-24 h-24 rounded-3xl overflow-hidden bg-gradient-to-br from-primary-400 to-indigo-600 flex items-center justify-center text-white text-3xl font-bold shadow-xl border-4 border-white dark:border-gray-800 transition-transform duration-300 group-hover:scale-105">
+              {avatar ? (
+                <img src={avatar} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                user?.name?.[0]?.toUpperCase()
+              )}
+            </div>
+            <label className="absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 group-hover:opacity-100 cursor-pointer rounded-3xl transition-opacity duration-200">
+              <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </label>
           </div>
           <div>
-            <p className="font-semibold text-gray-900 dark:text-white">{user?.name}</p>
-            <p className="text-sm text-gray-400">{user?.email}</p>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">{user?.name}</h2>
+            <p className="text-gray-500 dark:text-gray-400">{user?.email}</p>
+            <p className="text-xs text-primary-600 font-medium mt-2 bg-primary-50 dark:bg-primary-900/30 px-2 py-1 rounded-lg inline-block">Pro Account</p>
           </div>
         </div>
 
