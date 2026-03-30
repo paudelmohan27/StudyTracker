@@ -5,7 +5,7 @@ import axios from 'axios';
  * The Vite dev server proxies /api → http://localhost:5000
  */
 const api = axios.create({
-  baseURL: '/',
+  baseURL: import.meta.env.VITE_API_URL || 'https://studytracker-8x3m.onrender.com',
   headers: { 'Content-Type': 'application/json' },
 });
 
