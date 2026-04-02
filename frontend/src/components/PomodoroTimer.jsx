@@ -16,9 +16,33 @@ export default function PomodoroTimer() {
   const [subjects, setSubjects] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState('');
   
-  const timerRef = useRef(null);
+  const workerRef = useRef(null);
+  const expectedEndTimeRef = useRef(null);
   const focusStartTimeRef = useRef(null);
   const audioRef = useRef(null);
+
+  // Initialize Web Worker for background-resilient ticking
+  useEffect(() => {
+    const workerCode = `
+      let interval;
+      self.onmessage = function(e) {
+        if (e.data === 'start') {
+          if (!interval) interval = setInterval(() => self.postMessage('tick'), 500);
+        } else if (e.data === 'stop') {
+          clearInterval(interval);
+          interval = null;
+        }
+      };
+    `;
+    const blob = new Blob([workerCode], { type: 'application/javascript' });
+    const url = URL.createObjectURL(blob);
+    workerRef.current = new Worker(url);
+
+    return () => {
+      workerRef.current.terminate();
+      URL.revokeObjectURL(url);
+    };
+  }, []);
 
   const mode = MODES[modeIdx];
 
@@ -85,33 +109,52 @@ export default function PomodoroTimer() {
   }, [mode.key, mode.minutes, sessions, selectedSubject, playNotification]);
 
   useEffect(() => {
-    if (running) {
-      if (mode.key === 'focus' && !focusStartTimeRef.current) {
-        focusStartTimeRef.current = new Date();
-      }
+    if (!workerRef.current || !running) return;
 
-      timerRef.current = setInterval(() => {
-        setSeconds((prev) => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current);
-            completeSession();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      clearInterval(timerRef.current);
+    if (mode.key === 'focus' && !focusStartTimeRef.current) {
+      focusStartTimeRef.current = new Date();
     }
-    return () => clearInterval(timerRef.current);
+
+    workerRef.current.onmessage = () => {
+      const remaining = Math.max(0, Math.round((expectedEndTimeRef.current - Date.now()) / 1000));
+      setSeconds(remaining);
+
+      if (remaining <= 0) {
+        workerRef.current.postMessage('stop');
+        setRunning(false);
+        completeSession();
+      }
+    };
+
+    workerRef.current.postMessage('start');
+
+    return () => workerRef.current?.postMessage('stop');
   }, [running, mode.key, completeSession]);
 
-  const toggleTimer = () => setRunning(!running);
+  // Page Visibility API to sync UI immediately when returning to tab
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && running) {
+        const remaining = Math.max(0, Math.round((expectedEndTimeRef.current - Date.now()) / 1000));
+        setSeconds(remaining);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [running]);
+
+  const toggleTimer = () => {
+    if (!running) {
+      expectedEndTimeRef.current = Date.now() + seconds * 1000;
+    }
+    setRunning(!running);
+  };
 
   const resetTimer = () => {
     setRunning(false);
     setSeconds(mode.minutes * 60);
     focusStartTimeRef.current = null;
+    expectedEndTimeRef.current = null;
   };
 
   const skipMode = () => {
@@ -120,6 +163,7 @@ export default function PomodoroTimer() {
     setSeconds(MODES[nextIdx].minutes * 60);
     setRunning(false);
     focusStartTimeRef.current = null;
+    expectedEndTimeRef.current = null;
   };
 
   const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
