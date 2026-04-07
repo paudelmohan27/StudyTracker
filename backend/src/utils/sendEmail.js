@@ -5,14 +5,27 @@ const sendEmail = async (options) => {
   let transporter;
   
   if (process.env.SMTP_HOST && process.env.SMTP_EMAIL && process.env.SMTP_PASSWORD) {
-    transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT || 587,
-      auth: {
-        user: process.env.SMTP_EMAIL,
-        pass: process.env.SMTP_PASSWORD,
-      },
-    });
+    const isGmail = process.env.SMTP_HOST.includes('gmail');
+    
+    transporter = nodemailer.createTransport(
+      isGmail 
+      ? {
+          service: 'gmail',
+          auth: {
+            user: process.env.SMTP_EMAIL,
+            pass: process.env.SMTP_PASSWORD,
+          },
+        }
+      : {
+          host: process.env.SMTP_HOST,
+          port: parseInt(process.env.SMTP_PORT) || 587,
+          secure: parseInt(process.env.SMTP_PORT) === 465,
+          auth: {
+            user: process.env.SMTP_EMAIL,
+            pass: process.env.SMTP_PASSWORD,
+          },
+        }
+    );
   } else {
     // Development fallback using Ethereal Email if no SMTP set
     console.log('⚠️ No SMTP config found in .env, falling back to ethereal email (test account)');
