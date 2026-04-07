@@ -8,7 +8,7 @@
 
 | Service  | URL |
 |----------|-----|
-| Frontend | [https://studytracker.vercel.app](https://tracker.paudelmohan.com.np)* |
+| Frontend | [https://studytracker.vercel.app](https://tracker.paudelmohan.com.np) |
 | Backend  | [https://studytracker-api.onrender.com](https://studytracker-8x3m.onrender.com/) |
 
 ---
