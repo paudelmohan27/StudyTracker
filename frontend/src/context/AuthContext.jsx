@@ -72,8 +72,30 @@ export const AuthProvider = ({ children }) => {
     setUser(updatedUser);
   };
 
+  const forgotPassword = async (email) => {
+    const { data } = await api.post('/api/auth/forgotpassword', { email });
+    return data;
+  };
+
+  const resetPassword = async (token, password) => {
+    const { data } = await api.put(`/api/auth/resetpassword/${token}`, { password });
+    return data;
+  };
+
+  const updatePassword = async (currentPassword, newPassword) => {
+    const { data } = await api.put('/api/auth/updatepassword', { currentPassword, newPassword });
+    // After changing password, update token so user remains logged in
+    const { token } = data;
+    localStorage.setItem(ST_TOKEN_KEY, token);
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    return data;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updatePreferences }}>
+    <AuthContext.Provider value={{
+      user, loading, login, register, logout, updatePreferences,
+      forgotPassword, resetPassword, updatePassword
+    }}>
       {children}
     </AuthContext.Provider>
   );

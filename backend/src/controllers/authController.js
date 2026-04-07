@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
+const crypto = require('crypto');
 const User = require('../models/User');
+const sendEmail = require('../utils/sendEmail');
 
 /** Generate a signed JWT token */
 const generateToken = (id) => {
@@ -138,4 +140,128 @@ const updatePreferences = async (req, res, next) => {
   }
 };
 
-module.exports = { register, login, getMe, updatePreferences };
+/**
+ * POST /api/auth/forgotpassword
+ * Forgot password
+ */
+const forgotPassword = async (req, res, next) => {
+  try {
+    const user = await User.findOne({ email: req.body.email });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'There is no user with that email' });
+    }
+
+    // Get reset token
+    const resetToken = user.getResetPasswordToken();
+
+    await user.save({ validateBeforeSave: false });
+
+    // Create reset url
+    // In production, this should point to your frontend
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
+
+    const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please make a PUT request to: \n\n ${resetUrl}`;
+    const htmlMessage = `
+      <h1>Password Reset Request</h1>
+      <p>You are receiving this email because you (or someone else) has requested the reset of a password.</p>
+      <p>Please click the link below to reset your password:</p>
+      <a href="${resetUrl}" style="display:inline-block;padding:10px 20px;background-color:#4F46E5;color:white;text-decoration:none;border-radius:5px;">Reset Password</a>
+      <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>
+    `;
+
+    try {
+      await sendEmail({
+        email: user.email,
+        subject: 'Password reset token',
+        message,
+        htmlMessage
+      });
+
+      res.status(200).json({ success: true, message: 'Email sent' });
+    } catch (err) {
+      console.error(err);
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+
+      await user.save({ validateBeforeSave: false });
+
+      return res.status(500).json({ success: false, message: 'Email could not be sent' });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * PUT /api/auth/resetpassword/:resettoken
+ * Reset password
+ */
+const resetPassword = async (req, res, next) => {
+  try {
+    // Get hashed token
+    const resetPasswordToken = crypto.createHash('sha256').update(req.params.resettoken).digest('hex');
+
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired token' });
+    }
+
+    // Ensure password length
+    if (!req.body.password || req.body.password.length < 6) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+    }
+
+    // Set new password
+    user.password = req.body.password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+
+    const token = generateToken(user._id);
+
+    res.status(200).json({ success: true, token });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * PUT /api/auth/updatepassword
+ * Update user password (authenticated)
+ */
+const updatePassword = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id).select('+password');
+
+    // Check current password
+    if (!req.body.currentPassword) {
+      return res.status(400).json({ success: false, message: 'Please provide current password' });
+    }
+
+    if (!req.body.newPassword || req.body.newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: 'New password must be at least 6 characters' });
+    }
+
+    const isMatch = await user.comparePassword(req.body.currentPassword);
+
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: 'Password is incorrect' });
+    }
+
+    user.password = req.body.newPassword;
+    await user.save();
+
+    const token = generateToken(user._id);
+    res.status(200).json({ success: true, token });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { register, login, getMe, updatePreferences, forgotPassword, resetPassword, updatePassword };

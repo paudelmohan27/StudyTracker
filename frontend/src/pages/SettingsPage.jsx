@@ -16,13 +16,19 @@ function centerAspectCrop(mediaWidth, mediaHeight, aspect) {
 }
 
 export default function SettingsPage() {
-  const { user, updatePreferences, logout } = useAuth();
+  const { user, updatePreferences, updatePassword, logout } = useAuth();
   
   // Basic settings
   const [name, setName] = useState(user?.name || '');
   const [darkMode, setDarkMode] = useState(user?.darkMode || false);
   const [avatar, setAvatar] = useState(user?.avatar || '');
   const [saving, setSaving] = useState(false);
+
+  // Password settings
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordSaving, setPasswordSaving] = useState(false);
 
   // Crop & Image states
   const [imgSrc, setImgSrc] = useState('');
@@ -146,6 +152,25 @@ export default function SettingsPage() {
     }
   };
 
+  const handlePasswordSave = async (e) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      return toast.error('New passwords do not match');
+    }
+    setPasswordSaving(true);
+    try {
+      await updatePassword(currentPassword, newPassword);
+      toast.success('Password updated successfully!');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update password.');
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
+
   const handleDarkToggle = (val) => {
     setDarkMode(val); // Optimistic immediate update
     // Debounce the API call
@@ -233,6 +258,51 @@ export default function SettingsPage() {
             />
           </button>
         </div>
+      </div>
+
+      {/* Security */}
+      <div className="card">
+        <h2 className="font-bold text-gray-900 dark:text-white mb-4">🔒 Security</h2>
+        <form onSubmit={handlePasswordSave} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Current Password</label>
+            <input
+              type="password"
+              required
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              className="input"
+              placeholder="••••••••"
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">New Password</label>
+              <input
+                type="password"
+                required
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="input"
+                placeholder="••••••••"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Confirm New Password</label>
+              <input
+                type="password"
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="input"
+                placeholder="••••••••"
+              />
+            </div>
+          </div>
+          <button type="submit" disabled={passwordSaving} className="btn-secondary">
+            {passwordSaving ? 'Updating...' : 'Update Password'}
+          </button>
+        </form>
       </div>
 
       {/* Danger zone */}

@@ -1,6 +1,6 @@
 const express = require('express');
 const { body } = require('express-validator');
-const { register, login, getMe, updatePreferences } = require('../controllers/authController');
+const { register, login, getMe, updatePreferences, forgotPassword, resetPassword, updatePassword } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 const { parser } = require('../config/cloudinary');
 
@@ -28,5 +28,8 @@ router.post('/upload', protect, parser.single('image'), (req, res) => {
   }
   res.json({ success: true, url: req.file.path });
 });
+router.post('/forgotpassword', forgotPassword);
+router.put('/resetpassword/:resettoken', resetPassword);
+router.put('/updatepassword', protect, updatePassword);
 
 module.exports = router;
