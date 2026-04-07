@@ -1,51 +1,155 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
+import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
+import debounce from 'lodash.debounce';
+import Modal from '../components/Modal';
+import toast from 'react-hot-toast';
+
+// Helper to center the crop area initially
+function centerAspectCrop(mediaWidth, mediaHeight, aspect) {
+  return centerCrop(
+    makeAspectCrop({ unit: '%', width: 90 }, aspect, mediaWidth, mediaHeight),
+    mediaWidth,
+    mediaHeight
+  );
+}
 
 export default function SettingsPage() {
   const { user, updatePreferences, logout } = useAuth();
-  const [name, setName]       = useState(user?.name || '');
+  
+  // Basic settings
+  const [name, setName] = useState(user?.name || '');
   const [darkMode, setDarkMode] = useState(user?.darkMode || false);
-  const [avatar, setAvatar]     = useState(user?.avatar || '');
-  const [saving, setSaving]     = useState(false);
-  const [saved, setSaved]       = useState(false);
-  const [error, setError]       = useState('');
+  const [avatar, setAvatar] = useState(user?.avatar || '');
+  const [saving, setSaving] = useState(false);
+
+  // Crop & Image states
+  const [imgSrc, setImgSrc] = useState('');
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [crop, setCrop] = useState();
+  const [completedCrop, setCompletedCrop] = useState(null);
+  const imgRef = useRef(null);
+
+  // Create a debounced update function for immediate UI but delayed API
+  const debouncedUpdatePreference = useCallback(
+    debounce(async (prefs) => {
+      try {
+        await updatePreferences(prefs);
+        toast.success('Preferences saved!');
+      } catch {
+        toast.error('Failed to save preferences.');
+      }
+    }, 1000),
+    [updatePreferences]
+  );
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 1024 * 1024) { // 1MB limit for base64
-        setError('Image must be less than 1MB');
+      if (file.size > 5 * 1024 * 1024) { // Increased to 5MB since we will crop and compress
+        toast.error('Image must be less than 5MB');
         return;
       }
       const reader = new FileReader();
       reader.onloadend = () => {
-        setAvatar(reader.result);
+        setImgSrc(reader.result);
+        setCropModalOpen(true);
       };
       reader.readAsDataURL(file);
+    }
+    // Clear input
+    e.target.value = '';
+  };
+
+  const onImageLoad = (e) => {
+    const { width, height } = e.currentTarget;
+    setCrop(centerAspectCrop(width, height, 1));
+  };
+
+  const uploadToBackend = async (fileBlob) => {
+    const formData = new FormData();
+    formData.append('image', fileBlob);
+
+    try {
+      const { data } = await api.post('/api/auth/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' } // let axios set boundary
+      });
+      return data.url;
+    } catch (err) {
+      console.error(err);
+      throw new Error("Backend upload failed");
+    }
+  };
+
+  const handleCropSave = async () => {
+    if (!completedCrop || !imgRef.current) {
+      setCropModalOpen(false);
+      return;
+    }
+    setSaving(true);
+    
+    try {
+      // 1. Draw cropped image onto a canvas
+      const canvas = document.createElement('canvas');
+      const scaleX = imgRef.current.naturalWidth / imgRef.current.width;
+      const scaleY = imgRef.current.naturalHeight / imgRef.current.height;
+      const ctx = canvas.getContext('2d');
+      const pixelRatio = window.devicePixelRatio;
+
+      canvas.width = Math.floor(completedCrop.width * scaleX * pixelRatio);
+      canvas.height = Math.floor(completedCrop.height * scaleY * pixelRatio);
+
+      ctx.scale(pixelRatio, pixelRatio);
+      ctx.imageSmoothingQuality = 'high';
+
+      const cropX = completedCrop.x * scaleX;
+      const cropY = completedCrop.y * scaleY;
+      const cropWidth = completedCrop.width * scaleX;
+      const cropHeight = completedCrop.height * scaleY;
+
+      ctx.drawImage(
+        imgRef.current,
+        cropX, cropY, cropWidth, cropHeight,
+        0, 0, cropWidth, cropHeight
+      );
+
+      // 2. Convert canvas to blob
+      const blob = await new Promise((resolve) => {
+        canvas.toBlob(resolve, 'image/jpeg', 0.9);
+      });
+
+      if (!blob) throw new Error('Canvas is empty');
+
+      // 3. Upload blob to backend
+      const url = await uploadToBackend(blob);
+      setAvatar(url);
+      setCropModalOpen(false);
+      toast.success('Avatar uploaded! Click Save Changes to finalize.');
+    } catch (e) {
+      toast.error('Failed to crop and upload image.');
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
-    setError('');
-    setSaved(false);
     try {
       await updatePreferences({ name, darkMode, avatar });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+      toast.success('Changes saved successfully!');
     } catch {
-      setError('Failed to save settings.');
+      toast.error('Failed to save settings.');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDarkToggle = async (val) => {
-    setDarkMode(val);
-    try {
-      await updatePreferences({ darkMode: val, name, avatar });
-    } catch {}
+  const handleDarkToggle = (val) => {
+    setDarkMode(val); // Optimistic immediate update
+    // Debounce the API call
+    debouncedUpdatePreference({ darkMode: val, name, avatar });
   };
 
   return (
@@ -82,9 +186,6 @@ export default function SettingsPage() {
         </div>
 
         <form onSubmit={handleSave} className="space-y-4">
-          {error  && <p className="text-sm text-red-500">{error}</p>}
-          {saved  && <p className="text-sm text-emerald-500">✅ Changes saved successfully!</p>}
-
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Display Name</label>
             <input
@@ -147,6 +248,36 @@ export default function SettingsPage() {
           </button>
         </div>
       </div>
+
+      {/* Image Crop Modal */}
+      <Modal isOpen={cropModalOpen} onClose={() => setCropModalOpen(false)} title="Crop Avatar">
+        <div className="flex flex-col items-center gap-4">
+          {imgSrc && (
+            <ReactCrop
+              crop={crop}
+              onChange={(_, percentCrop) => setCrop(percentCrop)}
+              onComplete={(c) => setCompletedCrop(c)}
+              aspect={1}
+              circularCrop
+            >
+              <img
+                ref={imgRef}
+                alt="Upload"
+                src={imgSrc}
+                onLoad={onImageLoad}
+                className="max-h-[60vh] object-contain rounded-xl"
+              />
+            </ReactCrop>
+          )}
+          <div className="flex w-full gap-2 mt-4">
+            <button onClick={() => setCropModalOpen(false)} className="btn-secondary flex-1">Cancel</button>
+            <button onClick={handleCropSave} disabled={saving} className="btn-primary flex-1">
+              {saving ? 'Processing...' : 'Apply Crop'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
     </div>
   );
 }

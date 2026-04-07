@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import api from '../services/api';
+import { ST_TOKEN_KEY, ST_USER_KEY } from '../utils/constants';
 
 const AuthContext = createContext(null);
 
@@ -9,13 +10,23 @@ export const AuthProvider = ({ children }) => {
 
   // On mount, try to restore session from localStorage
   useEffect(() => {
-    const token = localStorage.getItem('st_token');
-    const savedUser = localStorage.getItem('st_user');
+    const token = localStorage.getItem(ST_TOKEN_KEY);
+    const savedUser = localStorage.getItem(ST_USER_KEY);
     if (token && savedUser) {
       setUser(JSON.parse(savedUser));
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     }
     setLoading(false);
+  }, []);
+
+  // Listen for unauth events from api interceptor
+  useEffect(() => {
+    const handleUnauth = () => {
+      delete api.defaults.headers.common['Authorization'];
+      setUser(null);
+    };
+    window.addEventListener('auth-unauthorized', handleUnauth);
+    return () => window.removeEventListener('auth-unauthorized', handleUnauth);
   }, []);
 
   // Apply dark mode on user change
@@ -30,8 +41,8 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     const { data } = await api.post('/api/auth/login', { email, password });
     const { token, user: userData } = data;
-    localStorage.setItem('st_token', token);
-    localStorage.setItem('st_user', JSON.stringify(userData));
+    localStorage.setItem(ST_TOKEN_KEY, token);
+    localStorage.setItem(ST_USER_KEY, JSON.stringify(userData));
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     setUser(userData);
     return userData;
@@ -40,16 +51,16 @@ export const AuthProvider = ({ children }) => {
   const register = async (name, email, password) => {
     const { data } = await api.post('/api/auth/register', { name, email, password });
     const { token, user: userData } = data;
-    localStorage.setItem('st_token', token);
-    localStorage.setItem('st_user', JSON.stringify(userData));
+    localStorage.setItem(ST_TOKEN_KEY, token);
+    localStorage.setItem(ST_USER_KEY, JSON.stringify(userData));
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     setUser(userData);
     return userData;
   };
 
   const logout = () => {
-    localStorage.removeItem('st_token');
-    localStorage.removeItem('st_user');
+    localStorage.removeItem(ST_TOKEN_KEY);
+    localStorage.removeItem(ST_USER_KEY);
     delete api.defaults.headers.common['Authorization'];
     setUser(null);
   };
@@ -57,7 +68,7 @@ export const AuthProvider = ({ children }) => {
   const updatePreferences = async (prefs) => {
     const { data } = await api.put('/api/auth/preferences', prefs);
     const updatedUser = data.user;
-    localStorage.setItem('st_user', JSON.stringify(updatedUser));
+    localStorage.setItem(ST_USER_KEY, JSON.stringify(updatedUser));
     setUser(updatedUser);
   };
 

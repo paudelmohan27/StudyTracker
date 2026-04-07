@@ -2,6 +2,7 @@ const express = require('express');
 const { body } = require('express-validator');
 const { register, login, getMe, updatePreferences } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
+const { parser } = require('../config/cloudinary');
 
 const router = express.Router();
 
@@ -21,5 +22,11 @@ router.post('/register', registerValidation, register);
 router.post('/login', loginValidation, login);
 router.get('/me', protect, getMe);
 router.put('/preferences', protect, updatePreferences);
+router.post('/upload', protect, parser.single('image'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'No file uploaded' });
+  }
+  res.json({ success: true, url: req.file.path });
+});
 
 module.exports = router;

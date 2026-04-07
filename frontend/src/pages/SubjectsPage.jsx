@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import api from '../services/api';
 import SubjectCard from '../components/SubjectCard';
 import Modal from '../components/Modal';
+import toast from 'react-hot-toast';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, rectSortingStrategy } from '@dnd-kit/sortable';
 
 const COLORS = ['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#84cc16'];
 const ICONS  = ['📚','🔬','🧮','🏛️','🌍','💻','🎨','🎵','⚗️','📐','🧬','📖'];
@@ -17,10 +20,29 @@ export default function SubjectsPage() {
   const [form, setForm]           = useState(defaultForm);
   const [saving, setSaving]       = useState(false);
   const [formError, setFormError] = useState('');
+  const [deleteId, setDeleteId]   = useState(null);
 
   // Search and Sort states
   const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState('newest'); // 'newest', 'name', 'progress', 'exam'
+  const [sortBy, setSortBy] = useState('custom'); // 'custom', 'newest', 'name', 'progress', 'exam'
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setSubjects((items) => {
+        const oldIndex = items.findIndex((i) => i._id === active.id);
+        const newIndex = items.findIndex((i) => i._id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+      // Force custom sort when user drags to prevent snapbacks
+      setSortBy('custom'); 
+    }
+  };
 
   const fetchSubjects = async () => {
     try {
@@ -75,19 +97,27 @@ export default function SubjectsPage() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Delete this subject and all its topics? This cannot be undone.')) return;
+  const confirmDelete = async () => {
+    if (!deleteId) return;
     try {
-      await api.delete(`/api/subjects/${id}`);
-      setSubjects((prev) => prev.filter((s) => s._id !== id));
+      await api.delete(`/api/subjects/${deleteId}`);
+      setSubjects((prev) => prev.filter((s) => s._id !== deleteId));
+      toast.success('Subject deleted successfully');
     } catch {
-      alert('Failed to delete subject.');
+      toast.error('Failed to delete subject.');
+    } finally {
+      setDeleteId(null);
     }
+  };
+
+  const handleDeleteClick = (id) => {
+    setDeleteId(id);
   };
 
   const filteredAndSorted = subjects
     .filter((s) => s.name.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {
+      if (sortBy === 'custom') return 0; // maintain drag order base
       if (sortBy === 'name') return a.name.localeCompare(b.name);
       if (sortBy === 'progress') return b.averageProgress - a.averageProgress;
       if (sortBy === 'exam') {
@@ -130,6 +160,7 @@ export default function SubjectsPage() {
             onChange={(e) => setSortBy(e.target.value)}
             className="input !py-1.5 text-xs w-full sm:w-40 bg-white dark:bg-gray-900"
           >
+            <option value="custom">Custom Order</option>
             <option value="newest">Newest First</option>
             <option value="name">Alphabetical</option>
             <option value="progress">Highest Progress</option>
@@ -157,11 +188,15 @@ export default function SubjectsPage() {
           No subjects match your search.
         </div>
       ) : (
-        <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
-          {filteredAndSorted.map((subject) => (
-            <SubjectCard key={subject._id} subject={subject} onEdit={openEdit} onDelete={handleDelete} />
-          ))}
-        </div>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={filteredAndSorted.map(s => s._id)} strategy={rectSortingStrategy}>
+            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
+              {filteredAndSorted.map((subject) => (
+                <SubjectCard key={subject._id} subject={subject} onEdit={openEdit} onDelete={handleDeleteClick} />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       )}
 
       {/* Create / Edit Modal */}
@@ -260,6 +295,19 @@ export default function SubjectsPage() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal isOpen={!!deleteId} onClose={() => setDeleteId(null)} title="Delete Subject">
+        <div className="space-y-4">
+          <p className="text-gray-700 dark:text-gray-300">
+            Are you sure you want to delete this subject and all its topics? This action cannot be undone.
+          </p>
+          <div className="flex gap-2 pt-2">
+            <button onClick={() => setDeleteId(null)} className="btn-secondary flex-1">Cancel</button>
+            <button onClick={confirmDelete} className="btn-danger flex-1">Delete</button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

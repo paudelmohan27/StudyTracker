@@ -82,4 +82,52 @@ const getStudyStats = async (req, res, next) => {
   }
 };
 
-module.exports = { createStudySession, getStudyHistory, getStudyStats };
+/**
+ * PUT /api/study-sessions/:id
+ * Update a study session
+ */
+const updateStudySession = async (req, res, next) => {
+  try {
+    let session = await StudySession.findById(req.params.id);
+    if (!session) {
+      return res.status(404).json({ success: false, message: 'Session not found' });
+    }
+    // Make sure user owns the session
+    if (session.user.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ success: false, message: 'Not authorized' });
+    }
+
+    session = await StudySession.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+
+    res.json({ success: true, data: session });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * DELETE /api/study-sessions/:id
+ * Delete a study session
+ */
+const deleteStudySession = async (req, res, next) => {
+  try {
+    const session = await StudySession.findById(req.params.id);
+    if (!session) {
+      return res.status(404).json({ success: false, message: 'Session not found' });
+    }
+    // Make sure user owns the session
+    if (session.user.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ success: false, message: 'Not authorized' });
+    }
+
+    await session.deleteOne();
+    res.json({ success: true, data: {} });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { createStudySession, getStudyHistory, getStudyStats, updateStudySession, deleteStudySession };

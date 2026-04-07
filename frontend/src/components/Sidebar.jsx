@@ -11,7 +11,7 @@ export default function Sidebar() {
   const { user } = useAuth();
 
   return (
-    <aside className="hidden md:flex flex-col w-60 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 h-full shrink-0">
+    <aside className="hidden md:flex flex-col w-64 bg-white/60 dark:bg-gray-900/60 backdrop-blur-2xl border-r border-gray-200 dark:border-gray-800 h-full shrink-0 z-50">
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-6 border-b border-gray-100 dark:border-gray-800">
         <div className="relative group cursor-pointer">

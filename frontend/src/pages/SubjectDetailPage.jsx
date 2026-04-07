@@ -4,6 +4,7 @@ import api from '../services/api';
 import Modal from '../components/Modal';
 import ProgressBar from '../components/ProgressBar';
 import CountdownTimer from '../components/CountdownTimer';
+import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 
 const STATUS_OPTIONS = ['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED'];
@@ -24,6 +25,7 @@ export default function SubjectDetailPage() {
   const [form, setForm]           = useState(defaultTopicForm);
   const [saving, setSaving]       = useState(false);
   const [formError, setFormError] = useState('');
+  const [deleteId, setDeleteId]   = useState(null);
 
   const fetchSubject = async () => {
     try {
@@ -74,14 +76,21 @@ export default function SubjectDetailPage() {
     }
   };
 
-  const handleDelete = async (topicId) => {
-    if (!confirm('Delete this topic?')) return;
+  const confirmDelete = async () => {
+    if (!deleteId) return;
     try {
-      await api.delete(`/api/topics/${topicId}`);
-      setTopics((prev) => prev.filter((t) => t._id !== topicId));
+      await api.delete(`/api/topics/${deleteId}`);
+      setTopics((prev) => prev.filter((t) => t._id !== deleteId));
+      toast.success('Topic deleted successfully');
     } catch {
-      alert('Failed to delete topic.');
+      toast.error('Failed to delete topic.');
+    } finally {
+      setDeleteId(null);
     }
+  };
+
+  const handleDeleteClick = (topicId) => {
+    setDeleteId(topicId);
   };
 
   // Quick status toggle without modal
@@ -217,7 +226,7 @@ export default function SubjectDetailPage() {
                     ✏️
                   </button>
                   <button
-                    onClick={() => handleDelete(topic._id)}
+                    onClick={() => handleDeleteClick(topic._id)}
                     className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
                   >
                     🗑️
@@ -298,6 +307,19 @@ export default function SubjectDetailPage() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal isOpen={!!deleteId} onClose={() => setDeleteId(null)} title="Delete Topic">
+        <div className="space-y-4">
+          <p className="text-gray-700 dark:text-gray-300">
+            Are you sure you want to delete this topic? This action cannot be undone.
+          </p>
+          <div className="flex gap-2 pt-2">
+            <button onClick={() => setDeleteId(null)} className="btn-secondary flex-1">Cancel</button>
+            <button onClick={confirmDelete} className="btn-danger flex-1">Delete</button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

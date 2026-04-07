@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
@@ -30,6 +31,21 @@ const PublicRoute = ({ children }) => {
 function App() {
   return (
     <AuthProvider>
+      <Toaster 
+        position="top-right" 
+        toastOptions={{
+          style: {
+            background: 'var(--toast-bg, #ffffff)',
+            color: 'var(--toast-text, #111827)',
+            borderRadius: '20px',
+            border: '1px solid var(--toast-border, #f3f4f6)',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)',
+            fontFamily: "'Inter', sans-serif"
+          },
+          success: { iconTheme: { primary: '#10b981', secondary: '#ffffff' } },
+          error: { iconTheme: { primary: '#ef4444', secondary: '#ffffff' } },
+        }}
+      />
       <BrowserRouter>
         <Routes>
           {/* Public */}

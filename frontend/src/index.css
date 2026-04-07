@@ -11,13 +11,26 @@
 
 /* ── Base styles ─────────────────────────────── */
 @layer base {
+  :root {
+    --toast-bg: #ffffff;
+    --toast-text: #111827;
+    --toast-border: #f3f4f6;
+  }
+  .dark {
+    --toast-bg: #1f2937;
+    --toast-text: #f9fafb;
+    --toast-border: #374151;
+  }
+
   * { 
     @apply border-gray-200 dark:border-gray-800;
-    font-family: 'Plus Jakarta Sans', sans-serif;
   }
   body {
     @apply antialiased bg-gray-50 text-gray-900
-           dark:bg-gray-950 dark:text-gray-100 transition-colors duration-300;
+           dark:bg-[#0B0F19] dark:text-gray-100 transition-colors duration-300;
+    font-family: 'Inter', sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
     font-family: 'Plus Jakarta Sans', sans-serif;
   }
 }
@@ -25,15 +38,15 @@
 /* ── Component utilities ─────────────────────── */
 @layer components {
   .card {
-    @apply bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6;
+    @apply bg-white dark:bg-[#111827] rounded-3xl shadow-sm border border-gray-100 dark:border-[#1F2937] p-6 hover:shadow-lg transition-all duration-300;
   }
   .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-700 active:scale-95 text-white font-semibold
-           px-4 py-2 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply bg-primary-600 hover:bg-primary-500 active:scale-95 text-white font-bold
+           px-5 py-2.5 rounded-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-primary-500/30;
   }
   .btn-secondary {
-    @apply bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700
-           text-gray-700 dark:text-gray-200 font-semibold px-4 py-2 rounded-xl transition-all duration-200;
+    @apply bg-gray-100 hover:bg-gray-200 dark:bg-[#1F2937] dark:hover:bg-[#374151]
+           text-gray-800 dark:text-gray-100 font-bold px-5 py-2.5 rounded-2xl transition-all duration-300 active:scale-95;
   }
   .btn-danger {
     @apply bg-red-500 hover:bg-red-600 active:scale-95 text-white font-semibold

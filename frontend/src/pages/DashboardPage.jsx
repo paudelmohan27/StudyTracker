@@ -5,6 +5,9 @@ import api from '../services/api';
 import ProgressBar from '../components/ProgressBar';
 import CountdownTimer from '../components/CountdownTimer';
 import PomodoroTimer from '../components/PomodoroTimer';
+import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
+import { motion } from 'framer-motion';
 import {
   RadialBarChart,
   RadialBar,
@@ -47,9 +50,29 @@ export default function DashboardPage() {
   }, []);
 
   if (loading) return (
-    <div className="flex items-center justify-center h-64">
-      <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
-    </div>
+    <SkeletonTheme baseColor={user?.darkMode ? "#1f2937" : "#f3f4f6"} highlightColor={user?.darkMode ? "#374151" : "#f9fafb"}>
+      <div className="space-y-6 pt-4">
+        <div>
+           <Skeleton height={32} width={300} />
+           <Skeleton height={20} width={200} className="mt-2" />
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <Skeleton height={100} borderRadius={16} />
+          <Skeleton height={100} borderRadius={16} />
+          <Skeleton height={100} borderRadius={16} />
+          <Skeleton height={100} borderRadius={16} />
+        </div>
+        <div className="grid lg:grid-cols-3 gap-6">
+           <div className="lg:col-span-2 space-y-6">
+              <Skeleton height={300} borderRadius={16} />
+              <Skeleton height={350} borderRadius={16} />
+           </div>
+           <div className="space-y-6">
+              <Skeleton height={400} borderRadius={16} />
+           </div>
+        </div>
+      </div>
+    </SkeletonTheme>
   );
 
   if (error) return (
@@ -65,7 +88,11 @@ export default function DashboardPage() {
   ].filter((d) => d.value > 0);
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-6"
+    >
       {/* Welcome */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -192,10 +219,11 @@ export default function DashboardPage() {
               <Link to="/subjects" className="text-sm text-primary-600 dark:text-primary-400 font-semibold hover:underline">View all →</Link>
             </div>
             {allSubjects.length === 0 ? (
-              <div className="text-center text-gray-400 py-8">
-                <span className="text-5xl block mb-2">📚</span>
-                No subjects yet.{' '}
-                <Link to="/subjects" className="text-primary-500 font-semibold hover:underline">Add your first subject →</Link>
+              <div className="text-center py-10 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 mt-4">
+                <div className="w-16 h-16 bg-white dark:bg-gray-800 rounded-full shadow-sm flex items-center justify-center mx-auto mb-3 text-3xl">📚</div>
+                <h3 className="font-bold text-gray-900 dark:text-white mb-1">Your dashboard is looking a bit empty!</h3>
+                <p className="text-sm text-gray-400 max-w-sm mx-auto mb-4">Start tracking your classes, syllabus topics, and exam dates to see your progress bloom.</p>
+                <Link to="/subjects" className="btn-primary text-sm inline-flex">Create First Subject</Link>
               </div>
             ) : (
               <div className="space-y-4">
@@ -246,7 +274,7 @@ export default function DashboardPage() {
           <PomodoroTimer />
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 

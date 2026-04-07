@@ -1,6 +1,55 @@
+# =========================
+# ROOT .GITIGNORE
+# =========================
+
+# 1. Node & NPM
 node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json.backup
+
+# 2. Environment Variables & Secrets
 .env
-dist/
-build/
+.env.*.local
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+# (Make sure .env.example IS committed)
+
+# 3. Build & Output Artifacts
+frontend/dist/
+frontend/build/
+backend/dist/
+backend/build/
+.vite/
+coverage/
+.nyc_output/
+
+# 4. OS / System Files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# 5. Editor / IDE Settings
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.eslintcache
+
+# 6. Local Uploads / Media (If any are stored locally)
+backend/public/uploads/
+backend/tmp/
+backend/logs/
 *.log
+
+# 7. Vercel / Cloud Provider Locals
+.vercel/
+.vercel
