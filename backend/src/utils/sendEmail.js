@@ -121,5 +121,3 @@ const sendEmail = async (options) => {
 
 
 module.exports = sendEmail;
-
-Dont remove comment just only change from
