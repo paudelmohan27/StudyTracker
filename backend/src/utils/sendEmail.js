@@ -30,7 +30,10 @@ const sendEmail = async (options) => {
         tls: {
           // Necessary for connections from some hosting providers (like Render)
           rejectUnauthorized: false
-        }
+        },
+        // Force IPv4 as many cloud platforms have issues with IPv6 mail connectors
+        // This fixes the ENETUNREACH errors seen in Render logs
+        family: 4
       });
     } else {
       // Standard SMTP transporter
@@ -42,6 +45,7 @@ const sendEmail = async (options) => {
           user: process.env.SMTP_EMAIL,
           pass: process.env.SMTP_PASSWORD,
         },
+        family: 4
       });
     }
   } else {

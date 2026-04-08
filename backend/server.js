@@ -18,6 +18,9 @@ const app = express();
 
 const rateLimit = require('express-rate-limit');
 
+// Trust proxy (required for express-rate-limit to work correctly on Render/Vercel)
+app.set('trust proxy', 1);
+
 // ── Middleware ──────────────────────────────────────────────
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
