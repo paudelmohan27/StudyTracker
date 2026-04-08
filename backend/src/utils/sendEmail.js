@@ -1,91 +1,37 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
 /**
- * Utility function to send email via SMTP (Nodemailer)
- * Designed for production and development (Ethereal test accounts)
+ * Utility function to send email via Resend HTTP API.
+ * Uses HTTPS (port 443) instead of SMTP, which works on all hosting providers
+ * including Render's free tier which blocks outbound SMTP ports (587, 465).
  */
 const sendEmail = async (options) => {
-  let transporter;
-
-  // Check if configuration exists in env
-  const hasSMTPConfig = process.env.SMTP_HOST && process.env.SMTP_EMAIL && process.env.SMTP_PASSWORD;
-
-  if (hasSMTPConfig) {
-    const isGmail = process.env.SMTP_HOST.includes('gmail.com');
-    const port = parseInt(process.env.SMTP_PORT) || 587;
-    const isSecure = port === 465;
-
-    console.log(`🔌 Initializing SMTP transporter with host: ${process.env.SMTP_HOST}, port: ${port}`);
-
-    // If using Gmail, specialized configuration is often needed for cloud providers
-    if (isGmail) {
-      transporter = nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: port,
-        secure: isSecure, // true for 465, false for 587 (STARTTLS)
-        auth: {
-          user: process.env.SMTP_EMAIL,
-          pass: process.env.SMTP_PASSWORD,
-        },
-        tls: {
-          // Necessary for connections from some hosting providers (like Render)
-          rejectUnauthorized: false
-        },
-        // Force IPv4 as many cloud platforms have issues with IPv6 mail connectors
-        // This fixes the ENETUNREACH errors seen in Render logs
-        family: 4
-      });
-    } else {
-      // Standard SMTP transporter
-      transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: port,
-        secure: isSecure,
-        auth: {
-          user: process.env.SMTP_EMAIL,
-          pass: process.env.SMTP_PASSWORD,
-        },
-        family: 4
-      });
-    }
-  } else {
-    // Development fallback using Ethereal Email if no SMTP set
-    console.log('⚠️ No SMTP config found in .env, falling back to ethereal email (test account)');
-    const testAccount = await nodemailer.createTestAccount();
-    transporter = nodemailer.createTransport({
-      host: 'smtp.ethereal.email',
-      port: 587,
-      secure: false,
-      auth: {
-        user: testAccount.user,
-        pass: testAccount.pass,
-      },
-    });
+  if (!process.env.RESEND_API_KEY) {
+    console.error('❌ RESEND_API_KEY is not set in environment variables.');
+    throw new Error('Email service is not configured. Please set RESEND_API_KEY.');
   }
 
-  const message = {
-    from: `${process.env.FROM_NAME || 'StudyTracker'} <${process.env.FROM_EMAIL || 'noreply@studytracker.com'}>`,
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
+  const from = `${process.env.FROM_NAME || 'StudyTracker'} <${process.env.FROM_EMAIL || 'onboarding@resend.dev'}>`;
+
+  console.log(`📧 Sending email to: ${options.email} via Resend API`);
+
+  const { data, error } = await resend.emails.send({
+    from,
     to: options.email,
     subject: options.subject,
     text: options.message,
     html: options.htmlMessage || options.message.replace(/\n/g, '<br>'),
-  };
+  });
 
-  try {
-    const info = await transporter.sendMail(message);
-
-    if (!hasSMTPConfig) {
-      console.log(`📩 Message sent to Ethereal. Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
-    } else {
-      console.log('📩 Email sent successfully');
-    }
-    return info;
-  } catch (error) {
-    console.error('❌ Error in sendEmail utility:');
-    console.error(error);
-    throw error; // Propagate the error so controllers can handle it correctly
+  if (error) {
+    console.error('❌ Resend API error:', error);
+    throw new Error(error.message || 'Failed to send email via Resend');
   }
+
+  console.log('📩 Email sent successfully via Resend. ID:', data?.id);
+  return data;
 };
 
 module.exports = sendEmail;
-
