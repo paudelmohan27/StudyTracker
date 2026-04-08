@@ -18,8 +18,7 @@ const sendEmail = async (options) => {
 
   const resend = new Resend(process.env.RESEND_API_KEY);
 
-  // ✅ FIXED: Default sender now uses your verified domain
-  const from = `${process.env.FROM_NAME || 'StudyTracker'} <${process.env.FROM_EMAIL || 'noreply@tracker.paudelmohan.com.np'}>`;
+  const from = `${process.env.FROM_NAME || 'StudyTracker'} <${process.env.FROM_EMAIL || 'onboarding@resend.dev'}>`;
 
   console.log(`📧 Sending email to: ${options.email} via Resend API`);
 
@@ -122,3 +121,5 @@ const sendEmail = async (options) => {
 
 
 module.exports = sendEmail;
+
+Dont remove comment just only change from
