@@ -58,6 +58,16 @@ export const AuthProvider = ({ children }) => {
     return userData;
   };
 
+  const googleLogin = async (idToken) => {
+    const { data } = await api.post('/api/auth/google', { idToken });
+    const { token, user: userData } = data;
+    localStorage.setItem(ST_TOKEN_KEY, token);
+    localStorage.setItem(ST_USER_KEY, JSON.stringify(userData));
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    setUser(userData);
+    return userData;
+  };
+
   const logout = () => {
     localStorage.removeItem(ST_TOKEN_KEY);
     localStorage.removeItem(ST_USER_KEY);
@@ -93,7 +103,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={{
-      user, loading, login, register, logout, updatePreferences,
+      user, loading, login, register, googleLogin, logout, updatePreferences,
       forgotPassword, resetPassword, updatePassword
     }}>
       {children}

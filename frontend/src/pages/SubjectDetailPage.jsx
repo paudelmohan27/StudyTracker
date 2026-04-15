@@ -152,7 +152,7 @@ export default function SubjectDetailPage() {
         </div>
         {subject.examDate && (
           <p className="text-xs text-gray-400 mt-2">
-            Exam: {format(new Date(subject.examDate), 'EEEE, d MMMM yyyy')}
+            Exam: {format(new Date(subject.examDate), "EEEE, d MMMM yyyy 'at' h:mm a")}
           </p>
         )}
       </div>

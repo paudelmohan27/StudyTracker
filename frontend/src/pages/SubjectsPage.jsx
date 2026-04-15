@@ -6,6 +6,8 @@ import toast from 'react-hot-toast';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, rectSortingStrategy } from '@dnd-kit/sortable';
 
+import { format } from 'date-fns';
+
 const COLORS = ['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#84cc16'];
 const ICONS  = ['📚','🔬','🧮','🏛️','🌍','💻','🎨','🎵','⚗️','📐','🧬','📖'];
 
@@ -70,7 +72,7 @@ export default function SubjectsPage() {
       name:        subject.name,
       description: subject.description || '',
       color:       subject.color || COLORS[0],
-      examDate:    subject.examDate ? subject.examDate.split('T')[0] : '',
+      examDate:    subject.examDate ? format(new Date(subject.examDate), "yyyy-MM-dd'T'HH:mm") : '',
       icon:        subject.icon || ICONS[0],
     });
     setFormError('');
@@ -261,10 +263,10 @@ export default function SubjectsPage() {
 
           {/* Exam date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Exam Date</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Exam Date & Time</label>
             <input
               id="subject-exam-date"
-              type="date"
+              type="datetime-local"
               value={form.examDate}
               onChange={(e) => setForm({ ...form, examDate: e.target.value })}
               className="input"

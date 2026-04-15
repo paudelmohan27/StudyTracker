@@ -1,6 +1,7 @@
 const express = require('express');
 const { body } = require('express-validator');
-const { register, login, getMe, updatePreferences, forgotPassword, resetPassword, updatePassword } = require('../controllers/authController');
+const { register, login, googleLogin, getMe, updatePreferences, forgotPassword, resetPassword, updatePassword } = require('../controllers/authController');
+
 const { protect } = require('../middleware/auth');
 const { parser } = require('../config/cloudinary');
 
@@ -20,7 +21,9 @@ const loginValidation = [
 
 router.post('/register', registerValidation, register);
 router.post('/login', loginValidation, login);
+router.post('/google', googleLogin);
 router.get('/me', protect, getMe);
+
 router.put('/preferences', protect, updatePreferences);
 router.post('/upload', protect, parser.single('image'), (req, res) => {
   if (!req.file) {

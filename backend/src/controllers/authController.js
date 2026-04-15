@@ -1,14 +1,80 @@
 const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
 const crypto = require('crypto');
+const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 const sendEmail = require('../utils/sendEmail');
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 /** Generate a signed JWT token */
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
   });
+};
+
+/**
+ * POST /api/auth/google
+ * Login or Register with Google OAuth
+ */
+const googleLogin = async (req, res, next) => {
+  try {
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({ success: false, message: 'Google ID Token is required' });
+    }
+
+    // Verify Google Token
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    const { sub: googleId, email, name, picture: avatar } = payload;
+
+    // 1. Check if user exists by googleId
+    let user = await User.findOne({ googleId });
+
+    if (!user) {
+      // 2. Check if user exists by email (link accounts)
+      user = await User.findOne({ email });
+
+      if (user) {
+        user.googleId = googleId;
+        if (!user.avatar) user.avatar = avatar;
+        await user.save();
+      } else {
+        // 3. Create new user
+        user = await User.create({
+          name,
+          email,
+          googleId,
+          avatar,
+          // password is not required because we updated the model
+        });
+      }
+    }
+
+    const token = generateToken(user._id);
+
+    res.status(200).json({
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        darkMode: user.darkMode,
+        avatar: user.avatar,
+      },
+    });
+  } catch (error) {
+    console.error('Google Auth Error:', error);
+    res.status(401).json({ success: false, message: 'Google authentication failed' });
+  }
 };
 
 /**
@@ -264,4 +330,4 @@ const updatePassword = async (req, res, next) => {
   }
 };
 
-module.exports = { register, login, getMe, updatePreferences, forgotPassword, resetPassword, updatePassword };
+module.exports = { register, login, googleLogin, getMe, updatePreferences, forgotPassword, resetPassword, updatePassword };

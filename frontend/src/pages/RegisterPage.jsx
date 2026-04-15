@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 
 export default function RegisterPage() {
-  const { register } = useAuth();
+  const { register, googleLogin } = useAuth();
   const navigate = useNavigate();
 
   const [form, setForm]       = useState({ name: '', email: '', password: '', confirm: '' });
@@ -24,6 +25,19 @@ export default function RegisterPage() {
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError('');
+    setLoading(true);
+    try {
+      await googleLogin(credentialResponse.credential);
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Google Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -113,6 +127,23 @@ export default function RegisterPage() {
               {loading ? 'Creating account…' : 'Create Account'}
             </button>
           </form>
+
+          <div className="my-6 flex items-center">
+            <div className="flex-grow border-t border-white/10"></div>
+            <span className="mx-4 text-xs text-gray-500 uppercase font-medium">Or continue with</span>
+            <div className="flex-grow border-t border-white/10"></div>
+          </div>
+
+          <div className="flex justify-center">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError('Google Registration failed')}
+              theme="filled_black"
+              shape="pill"
+              size="large"
+              width="100%"
+            />
+          </div>
 
           <p className="text-center text-sm text-gray-400 mt-6">
             Already have an account?{' '}
