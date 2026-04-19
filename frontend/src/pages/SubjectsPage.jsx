@@ -3,17 +3,29 @@ import api from '../services/api';
 import SubjectCard from '../components/SubjectCard';
 import Modal from '../components/Modal';
 import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, rectSortingStrategy } from '@dnd-kit/sortable';
-
 import { format } from 'date-fns';
+import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
+import { useAuth } from '../context/AuthContext';
 
 const COLORS = ['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#84cc16'];
 const ICONS  = ['📚','🔬','🧮','🏛️','🌍','💻','🎨','🎵','⚗️','📐','🧬','📖'];
 
 const defaultForm = { name: '', description: '', color: COLORS[0], examDate: '', icon: ICONS[0] };
 
+const SORT_OPTIONS = [
+  { value: 'custom',   label: 'Custom Order' },
+  { value: 'newest',  label: 'Newest First' },
+  { value: 'name',    label: 'Alphabetical' },
+  { value: 'progress',label: 'Highest Progress' },
+  { value: 'exam',    label: 'Nearest Exam' },
+];
+
 export default function SubjectsPage() {
+  const { user } = useAuth();
   const [subjects, setSubjects]   = useState([]);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState('');
@@ -23,10 +35,10 @@ export default function SubjectsPage() {
   const [saving, setSaving]       = useState(false);
   const [formError, setFormError] = useState('');
   const [deleteId, setDeleteId]   = useState(null);
+  const [search, setSearch]       = useState('');
+  const [sortBy, setSortBy]       = useState('custom');
 
-  // Search and Sort states
-  const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState('custom'); // 'custom', 'newest', 'name', 'progress', 'exam'
+  const isDark = user?.darkMode;
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -41,8 +53,7 @@ export default function SubjectsPage() {
         const newIndex = items.findIndex((i) => i._id === over.id);
         return arrayMove(items, oldIndex, newIndex);
       });
-      // Force custom sort when user drags to prevent snapbacks
-      setSortBy('custom'); 
+      setSortBy('custom');
     }
   };
 
@@ -112,121 +123,203 @@ export default function SubjectsPage() {
     }
   };
 
-  const handleDeleteClick = (id) => {
-    setDeleteId(id);
-  };
-
   const filteredAndSorted = subjects
     .filter((s) => s.name.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {
-      if (sortBy === 'custom') return 0; // maintain drag order base
-      if (sortBy === 'name') return a.name.localeCompare(b.name);
+      if (sortBy === 'custom')   return 0;
+      if (sortBy === 'name')     return a.name.localeCompare(b.name);
       if (sortBy === 'progress') return b.averageProgress - a.averageProgress;
       if (sortBy === 'exam') {
         if (!a.examDate) return 1;
         if (!b.examDate) return -1;
         return new Date(a.examDate) - new Date(b.examDate);
       }
-      return new Date(b.createdAt) - new Date(a.createdAt); // newest
+      return new Date(b.createdAt) - new Date(a.createdAt);
     });
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Subjects</h1>
-          <p className="text-sm text-gray-400 mt-0.5">{subjects.length} subject{subjects.length !== 1 ? 's' : ''} tracked</p>
-        </div>
-        <button id="add-subject-btn" onClick={openCreate} className="btn-primary flex items-center gap-2 self-start sm:self-auto">
-          <span>+</span> Add Subject
-        </button>
-      </div>
+    <div className="space-y-8 pb-10">
 
-      {/* Toolbar: Search & Sort */}
-      <div className="flex flex-col md:flex-row items-center gap-3">
+      {/* ── Header ── */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="flex flex-col sm:flex-row sm:items-end justify-between gap-5 pt-2"
+      >
+        <div>
+          <p className="text-xs font-bold text-slate-400 dark:text-white/30 uppercase tracking-widest mb-2">
+            Academic Library
+          </p>
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
+            My{' '}
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary-400 to-violet-400">
+              Subjects
+            </span>
+          </h1>
+          <p className="text-slate-500 dark:text-white/40 font-medium mt-1">
+            {subjects.length} course{subjects.length !== 1 ? 's' : ''} in your curriculum
+          </p>
+        </div>
+        <motion.button
+          id="add-subject-btn"
+          onClick={openCreate}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+          className="btn-primary self-start sm:self-auto shrink-0"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+          </svg>
+          Add Subject
+        </motion.button>
+      </motion.div>
+
+      {/* ── Toolbar ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.5 }}
+        className="flex flex-col md:flex-row items-center gap-3"
+      >
+        {/* Search */}
         <div className="relative flex-1 w-full">
+          <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-white/30 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
           <input
             type="text"
             placeholder="Search subjects..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="input !pl-10 text-sm"
+            className="input-field !pl-11"
           />
-          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
         </div>
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <span className="text-xs text-gray-400 whitespace-nowrap">Sort by:</span>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="input !py-1.5 text-xs w-full sm:w-40 bg-white dark:bg-gray-900"
-          >
-            <option value="custom">Custom Order</option>
-            <option value="newest">Newest First</option>
-            <option value="name">Alphabetical</option>
-            <option value="progress">Highest Progress</option>
-            <option value="exam">Nearest Exam</option>
-          </select>
-        </div>
-      </div>
 
-      {/* Content */}
+        {/* Sort */}
+        <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
+          <span className="text-xs font-black text-slate-400 dark:text-white/30 whitespace-nowrap uppercase tracking-widest hidden sm:inline">Sort:</span>
+          <div className="relative w-full sm:w-48">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="input-field !py-2.5 text-sm w-full appearance-none pr-10 cursor-pointer"
+              style={{ background: 'var(--card-bg)' }}
+            >
+              {SORT_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+            <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-white/30 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* ── Content ── */}
       {loading ? (
-        <div className="flex justify-center py-16">
-          <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
-        </div>
+        <SkeletonTheme baseColor={isDark ? '#1a2035' : '#e8ecf4'} highlightColor={isDark ? '#243050' : '#f0f4fb'}>
+          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
+            {[1,2,3,4,5,6].map(i => <Skeleton key={i} height={220} borderRadius={20} />)}
+          </div>
+        </SkeletonTheme>
       ) : error ? (
-        <div className="card text-red-500">{error}</div>
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          className="rounded-2xl p-10 text-red-500 text-center font-bold border"
+          style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
+        >
+          {error}
+        </motion.div>
       ) : subjects.length === 0 ? (
-        <div className="card flex flex-col items-center py-16 text-center gap-4">
-          <span className="text-7xl">📚</span>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">No subjects yet</h2>
-          <p className="text-gray-400 text-sm max-w-xs">Add your first subject to start tracking your study progress and exam readiness.</p>
-          <button onClick={openCreate} className="btn-primary mt-2">Add your first subject</button>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="rounded-2xl border-2 border-dashed flex flex-col items-center py-20 text-center gap-4"
+          style={{ borderColor: 'var(--card-border)', background: 'var(--card-bg)' }}
+        >
+          <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-br from-primary-500/20 to-violet-500/20 flex items-center justify-center text-4xl animate-float border border-primary-500/10">
+            📚
+          </div>
+          <div>
+            <h2 className="text-xl font-black text-slate-900 dark:text-white mb-2">Ready to build your curriculum?</h2>
+            <p className="text-slate-400 dark:text-white/30 text-sm max-w-xs mx-auto">
+              Add your first subject to start tracking progress and stay ahead of every exam date.
+            </p>
+          </div>
+          <motion.button
+            onClick={openCreate}
+            whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+            className="btn-primary mt-2"
+          >
+            Add First Subject
+          </motion.button>
+        </motion.div>
       ) : filteredAndSorted.length === 0 ? (
-        <div className="card text-center py-12 text-gray-400">
-          No subjects match your search.
-        </div>
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          className="rounded-2xl p-12 text-center"
+          style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
+        >
+          <p className="text-slate-400 dark:text-white/30 font-bold">No subjects match your search.</p>
+        </motion.div>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={filteredAndSorted.map(s => s._id)} strategy={rectSortingStrategy}>
             <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
-              {filteredAndSorted.map((subject) => (
-                <SubjectCard key={subject._id} subject={subject} onEdit={openEdit} onDelete={handleDeleteClick} />
-              ))}
+              <AnimatePresence>
+                {filteredAndSorted.map((subject, idx) => (
+                  <motion.div
+                    key={subject._id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ delay: idx * 0.05, duration: 0.4 }}
+                  >
+                    <SubjectCard
+                      subject={subject}
+                      onEdit={openEdit}
+                      onDelete={(id) => setDeleteId(id)}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           </SortableContext>
         </DndContext>
       )}
 
-      {/* Create / Edit Modal */}
+      {/* ── Create / Edit Modal ── */}
       <Modal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={editing ? 'Edit Subject' : 'Add New Subject'}
+        title={editing ? 'Edit Subject' : 'New Subject'}
       >
-        <form onSubmit={handleSave} className="space-y-4">
+        <form onSubmit={handleSave} className="space-y-5">
           {formError && (
-            <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-3 py-2">
+            <motion.p
+              initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+              className="text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2.5 font-semibold"
+            >
               {formError}
-            </p>
+            </motion.p>
           )}
 
           {/* Icon picker */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Icon</label>
+            <label className="block text-[11px] font-black text-slate-500 dark:text-white/30 uppercase tracking-widest mb-3">Icon</label>
             <div className="flex flex-wrap gap-2">
               {ICONS.map((icon) => (
                 <button
                   type="button"
                   key={icon}
                   onClick={() => setForm({ ...form, icon })}
-                  className={`text-xl p-2 rounded-xl border-2 transition ${
+                  className={`text-xl p-2.5 rounded-xl border-2 transition-all duration-200 ${
                     form.icon === icon
-                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30'
-                      : 'border-gray-200 dark:border-gray-700 hover:border-primary-300'
+                      ? 'border-primary-500 bg-primary-500/10 scale-110'
+                      : 'border-slate-200 dark:border-white/10 hover:border-primary-400 hover:scale-105'
                   }`}
                 >
                   {icon}
@@ -237,7 +330,7 @@ export default function SubjectsPage() {
 
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Subject Name *</label>
+            <label className="block text-[11px] font-black text-slate-500 dark:text-white/30 uppercase tracking-widest mb-2">Subject Name *</label>
             <input
               id="subject-name"
               type="text"
@@ -245,44 +338,46 @@ export default function SubjectsPage() {
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               placeholder="e.g. Mathematics"
-              className="input"
+              className="input-field"
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Description</label>
+            <label className="block text-[11px] font-black text-slate-500 dark:text-white/30 uppercase tracking-widest mb-2">Description</label>
             <textarea
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               placeholder="Optional notes about this subject..."
               rows={2}
-              className="input resize-none"
+              className="input-field resize-none py-3"
             />
           </div>
 
           {/* Exam date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Exam Date & Time</label>
+            <label className="block text-[11px] font-black text-slate-500 dark:text-white/30 uppercase tracking-widest mb-2">Exam Date & Time</label>
             <input
               id="subject-exam-date"
               type="datetime-local"
               value={form.examDate}
               onChange={(e) => setForm({ ...form, examDate: e.target.value })}
-              className="input"
+              className="input-field"
             />
           </div>
 
           {/* Color */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Color</label>
-            <div className="flex gap-2 flex-wrap">
+            <label className="block text-[11px] font-black text-slate-500 dark:text-white/30 uppercase tracking-widest mb-3">Accent Color</label>
+            <div className="flex gap-2.5 flex-wrap">
               {COLORS.map((c) => (
                 <button
                   type="button"
                   key={c}
                   onClick={() => setForm({ ...form, color: c })}
-                  className={`w-8 h-8 rounded-xl border-4 transition ${form.color === c ? 'border-gray-900 dark:border-white scale-110' : 'border-transparent'}`}
+                  className={`w-9 h-9 rounded-xl border-4 transition-all duration-200 hover:scale-110 ${
+                    form.color === c ? 'border-slate-900 dark:border-white scale-110 shadow-lg' : 'border-transparent'
+                  }`}
                   style={{ backgroundColor: c }}
                 />
               ))}
@@ -290,24 +385,32 @@ export default function SubjectsPage() {
           </div>
 
           {/* Actions */}
-          <div className="flex gap-2 pt-2">
+          <div className="flex gap-3 pt-2">
             <button type="button" onClick={() => setModalOpen(false)} className="btn-secondary flex-1">Cancel</button>
             <button id="subject-save-btn" type="submit" disabled={saving} className="btn-primary flex-1">
-              {saving ? 'Saving…' : editing ? 'Save Changes' : 'Add Subject'}
+              {saving ? (
+                <span className="flex items-center gap-2">
+                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Saving…
+                </span>
+              ) : editing ? 'Save Changes' : 'Add Subject'}
             </button>
           </div>
         </form>
       </Modal>
 
-      {/* Delete Confirmation Modal */}
+      {/* ── Delete Confirmation Modal ── */}
       <Modal isOpen={!!deleteId} onClose={() => setDeleteId(null)} title="Delete Subject">
-        <div className="space-y-4">
-          <p className="text-gray-700 dark:text-gray-300">
-            Are you sure you want to delete this subject and all its topics? This action cannot be undone.
+        <div className="space-y-5">
+          <p className="text-slate-600 dark:text-white/60 leading-relaxed">
+            Are you sure you want to delete this subject and <span className="font-bold text-slate-900 dark:text-white">all its topics</span>? This action cannot be undone.
           </p>
-          <div className="flex gap-2 pt-2">
+          <div className="flex gap-3">
             <button onClick={() => setDeleteId(null)} className="btn-secondary flex-1">Cancel</button>
-            <button onClick={confirmDelete} className="btn-danger flex-1">Delete</button>
+            <button onClick={confirmDelete} className="btn-danger flex-1">Delete Subject</button>
           </div>
         </div>
       </Modal>

@@ -28,6 +28,7 @@ auth.json
 # 3. Project Specific (Requested)
 CLAUDE.md
 PRD.md
+.archive/
 
 # 4. Frontend & Backend specific (Consolidated)
 frontend/dist/

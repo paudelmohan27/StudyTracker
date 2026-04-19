@@ -2,8 +2,8 @@ import { NavLink } from 'react-router-dom';
 
 const navItems = [
   { to: '/dashboard', icon: '🏠', label: 'Home' },
-  { to: '/subjects',  icon: '📚', label: 'Subjects'  },
-  { to: '/settings',  icon: '⚙️',  label: 'Settings'  },
+  { to: '/subjects', icon: '📚', label: 'Subjects' },
+  { to: '/settings', icon: '⚙️', label: 'Settings' },
 ];
 
 export default function BottomNav() {
@@ -15,10 +15,9 @@ export default function BottomNav() {
             key={to}
             to={to}
             className={({ isActive }) =>
-              `flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors ${
-                isActive 
-                  ? 'text-primary-600 dark:text-primary-400' 
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+              `flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors ${isActive
+                ? 'text-primary-600 dark:text-primary-400'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
               }`
             }
           >
