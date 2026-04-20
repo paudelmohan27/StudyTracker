@@ -199,13 +199,13 @@ export default function LandingPage() {
           transition={{ duration: 0.9, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
           className="relative z-50 mx-auto mt-6 w-[95%] max-w-5xl"
         >
-          <div className="rounded-2xl bg-white/8 backdrop-blur-2xl border border-white/12 shadow-xl flex justify-between items-center px-5 py-3.5">
-            <Link to="/">
-              <motion.div className="flex items-center gap-3" whileHover={{ scale: 1.04 }} transition={{ type: 'spring', stiffness: 400 }}>
-                <Logo iconSize="w-8 h-8" showText={false} />
-                <div className="flex flex-col leading-none">
-                  <span className="text-base font-extrabold text-white tracking-tight">StudyTracker</span>
-                  <span className="text-[9px] font-bold text-amber-400 uppercase tracking-[0.2em]">Ace every exam</span>
+          <div className="rounded-2xl bg-white/8 backdrop-blur-2xl border border-white/12 shadow-xl flex justify-between items-center px-3 md:px-5 py-3 md:py-3.5">
+            <Link to="/" className="shrink min-w-0 mr-2">
+              <motion.div className="flex items-center gap-2 md:gap-3 min-w-0" whileHover={{ scale: 1.04 }} transition={{ type: 'spring', stiffness: 400 }}>
+                <Logo iconSize="w-6 h-6 md:w-8 md:h-8" showText={false} />
+                <div className="flex flex-col leading-none mt-0.5 shrink min-w-0">
+                  <span className="text-sm md:text-base font-extrabold text-white tracking-tight whitespace-nowrap truncate">StudyTracker</span>
+                  <span className="text-[7px] md:text-[9px] font-bold text-amber-400 uppercase tracking-[0.2em] whitespace-nowrap truncate">Ace every exam</span>
                 </div>
               </motion.div>
             </Link>
@@ -223,14 +223,14 @@ export default function LandingPage() {
               ))}
             </div>
 
-            <div className="flex gap-2 items-center">
+            <div className="flex gap-2 items-center shrink-0">
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link to="/login" className="text-xs md:text-sm font-semibold text-white/70 hover:text-white px-4 py-2 rounded-xl border border-white/10 hover:border-white/25 transition-all">
+                <Link to="/login" className="whitespace-nowrap text-[11px] md:text-sm font-semibold text-white/70 hover:text-white px-3 md:px-4 py-2 rounded-xl border border-white/10 hover:border-white/25 transition-all">
                   Log in
                 </Link>
               </motion.div>
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link to="/register" className="text-xs md:text-sm font-bold bg-white text-slate-900 px-5 py-2 rounded-xl shadow-[0_0_25px_rgba(255,255,255,0.2)] hover:shadow-[0_0_35px_rgba(255,255,255,0.35)] transition-all">
+                <Link to="/register" className="whitespace-nowrap text-[11px] md:text-sm font-bold bg-white text-slate-900 px-3 md:px-5 py-2 rounded-xl shadow-[0_0_25px_rgba(255,255,255,0.2)] hover:shadow-[0_0_35px_rgba(255,255,255,0.35)] transition-all">
                   Sign up free
                 </Link>
               </motion.div>
