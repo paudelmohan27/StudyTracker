@@ -87,7 +87,7 @@
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-username/StudyTracker.git
+git clone https://github.com/paudelmohan27/StudyTracker.git
 cd StudyTracker
 ```
 
