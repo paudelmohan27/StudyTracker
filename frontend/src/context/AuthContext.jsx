@@ -29,13 +29,11 @@ export const AuthProvider = ({ children }) => {
     return () => window.removeEventListener('auth-unauthorized', handleUnauth);
   }, []);
 
-  // Apply dark mode on user change
+  // The app is deliberately a daylight workspace: warm paper surfaces make a
+  // calm counterpoint to the cinematic landing page while sharing its earth
+  // and gold palette.
   useEffect(() => {
-    if (user?.darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    document.documentElement.classList.remove('dark');
   }, [user]);
 
   const login = async (email, password) => {

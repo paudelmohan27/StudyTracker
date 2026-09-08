@@ -12,9 +12,9 @@ export default function ProgressBar({ value = 0, color, showLabel = false, size 
   // Color logic: green ≥ 80, amber 40–79, red < 40
   const autoColor =
     clamped >= 80
-      ? '#10b981' // emerald-500
+      ? '#397b55' // completion signal
       : clamped >= 40
-      ? '#f59e0b' // amber-500
+      ? '#cf7548' // urgency signal
       : '#ef4444'; // red-500
 
   const fill = color || autoColor;

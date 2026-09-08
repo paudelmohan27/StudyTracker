@@ -11,7 +11,7 @@ import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { useAuth } from '../context/AuthContext';
 
-const COLORS = ['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#84cc16'];
+const COLORS = ['#397b55','#cf7548','#d3a342','#b94d42','#6f8565','#5f7d70','#bd8258','#9a7048'];
 const ICONS  = ['📚','🔬','🧮','🏛️','🌍','💻','🎨','🎵','⚗️','📐','🧬','📖'];
 
 const defaultForm = { name: '', description: '', color: COLORS[0], examDate: '', icon: ICONS[0] };

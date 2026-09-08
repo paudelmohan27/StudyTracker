@@ -32,7 +32,9 @@ app.use(express.urlencoded({ extended: true }));
 // Rate limiting
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+  // A dashboard makes several legitimate requests per load. Keep local work
+  // and UI iteration usable while retaining a meaningful production guard.
+  max: process.env.NODE_ENV === 'production' ? 200 : 2000,
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   message: { success: false, message: 'Too many requests from this IP, please try again after 15 minutes' }

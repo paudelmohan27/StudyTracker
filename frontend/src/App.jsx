@@ -43,7 +43,7 @@ function App() {
             boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)',
             fontFamily: "'Inter', sans-serif"
           },
-          success: { iconTheme: { primary: '#10b981', secondary: '#ffffff' } },
+          success: { iconTheme: { primary: '#d7ff63', secondary: '#101329' } },
           error: { iconTheme: { primary: '#ef4444', secondary: '#ffffff' } },
         }}
       />

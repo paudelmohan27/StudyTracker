@@ -13,6 +13,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from 'recharts';
 import StudySessionService from '../services/studySessionService';
+import StudyOrbit from '../components/StudyOrbit';
 
 // ── Animated Counter ───────────────────────────────────────────────────────
 function AnimatedNumber({ value, suffix = '' }) {
@@ -44,7 +45,7 @@ function AnimatedNumber({ value, suffix = '' }) {
 }
 
 // ── Stat card ──────────────────────────────────────────────────────────────
-function StatCard({ label, value, suffix, icon, gradient, delay }) {
+function StatCard({ label, value, suffix, icon, gradient, delay, active = true }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
@@ -61,7 +62,7 @@ function StatCard({ label, value, suffix, icon, gradient, delay }) {
         <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white shadow-lg`}>
           {icon}
         </div>
-        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+        <div className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-[#d7ff63] animate-pulse' : 'bg-white/20'}`} />
       </div>
       <div className="relative">
         <p className="text-[10px] font-bold text-slate-400 dark:text-white/30 uppercase tracking-widest mb-1">{label}</p>
@@ -88,6 +89,28 @@ function Card({ children, className = '', delay = 0 }) {
   );
 }
 
+function OnboardingCard() {
+  const steps = [
+    { number: '01', title: 'Create a subject', detail: 'Add the course you are preparing for and give it an exam date.', to: '/subjects' },
+    { number: '02', title: 'Break it into topics', detail: 'Turn a large syllabus into small, trackable study tasks.', to: '/subjects' },
+    { number: '03', title: 'Start a focus session', detail: 'Use the Pomodoro timer once your first study plan is ready.', to: '/subjects' },
+  ];
+
+  return <Card delay={0.25} className="relative overflow-hidden !p-0">
+    <div className="absolute -right-24 -top-24 h-56 w-56 rounded-full bg-primary-400/15 blur-3xl" />
+    <div className="relative p-6 sm:p-8">
+      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary-500">Your first study plan</p>
+      <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-900 dark:text-white">Start with one subject.</h2>
+      <p className="mt-2 max-w-xl text-sm font-medium leading-relaxed text-slate-500 dark:text-white/40">A few small steps now will turn this dashboard into a clear picture of your progress.</p>
+      <div className="mt-7 grid gap-3 md:grid-cols-3">
+        {steps.map((step) => <Link key={step.number} to={step.to} className="group rounded-2xl border p-4 transition-all hover:-translate-y-0.5 hover:shadow-md" style={{ background: 'var(--page-bg)', borderColor: 'var(--card-border)' }}>
+          <p className="text-xs font-black text-primary-500">{step.number}</p><h3 className="mt-4 text-sm font-black text-slate-900 dark:text-white">{step.title}</h3><p className="mt-2 text-xs font-medium leading-relaxed text-slate-400 dark:text-white/30">{step.detail}</p><span className="mt-4 inline-block text-xs font-black text-primary-500 group-hover:text-violet-500">Get started →</span>
+        </Link>)}
+      </div>
+    </div>
+  </Card>;
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 function getTimeGreeting() {
   const h = new Date().getHours();
@@ -103,24 +126,28 @@ export default function DashboardPage() {
   const [studyStats, setStudyStats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [retryKey, setRetryKey] = useState(0);
+  const pomodoroRef = useRef(null);
 
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const [dashRes, statsRes] = await Promise.all([
-          api.get('/api/dashboard/summary'),
-          StudySessionService.getStats()
-        ]);
+        setError('');
+        setLoading(true);
+        // Analytics should enrich the command deck, never prevent the core
+        // study plan from loading when that optional endpoint is unavailable.
+        const dashRes = await api.get('/api/dashboard/summary');
+        const statsRes = await StudySessionService.getStats().catch(() => ({ data: { data: [] } }));
         setData(dashRes.data.data);
         setStudyStats(statsRes.data.data || []);
-      } catch {
-        setError('Failed to load dashboard data.');
+      } catch (requestError) {
+        setError(requestError.response?.data?.message || 'Failed to load dashboard data.');
       } finally {
         setLoading(false);
       }
     };
     fetchDashboard();
-  }, []);
+  }, [retryKey]);
 
   if (loading) return (
     <SkeletonTheme baseColor={user?.darkMode ? '#1a2035' : '#e8ecf4'} highlightColor={user?.darkMode ? '#243050' : '#f0f4fb'}>
@@ -138,12 +165,16 @@ export default function DashboardPage() {
   );
 
   if (error) return (
-    <div className="rounded-2xl p-10 text-red-500 text-center font-bold border" style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>{error}</div>
+    <div className="rounded-2xl p-10 text-center border" style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
+      <p className="font-bold text-red-500">{error}</p>
+      <button onClick={() => setRetryKey((key) => key + 1)} className="btn-secondary mx-auto mt-5 text-sm">Try again</button>
+    </div>
   );
 
   const { overallProgress, totalSubjects, totalTopics, statusCounts, upcomingExams, urgentSubjects, allSubjects } = data;
+  const isNewUser = totalSubjects === 0;
 
-  const PIE_COLORS = ['#10b981', '#f59e0b', '#6366f1'];
+  const PIE_COLORS = ['#397b55', '#cf7548', '#d3a342'];
   const pieData = [
     { name: 'Completed',   value: statusCounts.COMPLETED,   color: PIE_COLORS[0] },
     { name: 'In Progress', value: statusCounts.IN_PROGRESS, color: PIE_COLORS[1] },
@@ -166,7 +197,7 @@ export default function DashboardPage() {
       >
         <div>
           <p className="text-xs font-bold text-slate-400 dark:text-white/30 uppercase tracking-widest mb-2">
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} · Mission control
           </p>
           <h1 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
             Good {getTimeGreeting()},{' '}
@@ -177,42 +208,47 @@ export default function DashboardPage() {
               👋
             </motion.span>
           </h1>
-          <p className="text-slate-500 dark:text-white/40 font-medium mt-1">Here's your academic progress overview.</p>
+          <p className="text-slate-500 dark:text-white/40 font-medium mt-1">Your academic universe is waiting for its next move.</p>
         </div>
         <div className="flex gap-3 shrink-0">
           <Link to="/subjects" className="btn-secondary py-2.5 text-sm">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
             Subjects
           </Link>
-          <button className="btn-primary py-2.5 text-sm">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
-            New Session
-          </button>
+          {isNewUser ? (
+            <Link to="/subjects" className="btn-primary py-2.5 text-sm"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>Create Subject</Link>
+          ) : (
+            <button onClick={() => pomodoroRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })} className="btn-primary py-2.5 text-sm"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>New Session</button>
+          )}
         </div>
       </motion.div>
+
+      <StudyOrbit subjects={allSubjects} />
 
       {/* ── Stat Cards ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Overall Progress" value={overallProgress} suffix="%" delay={0.05}
-          gradient="from-blue-500 to-indigo-600"
+          gradient="from-primary-500 to-primary-700"
           icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>}
         />
         <StatCard label="Active Courses" value={totalSubjects} delay={0.1}
-          gradient="from-violet-500 to-fuchsia-600"
+          gradient="from-violet-400 to-violet-600"
           icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>}
         />
         <StatCard label="Total Topics" value={totalTopics} delay={0.15}
-          gradient="from-emerald-500 to-teal-600"
+          gradient="from-[#d3a342] to-amber-600"
           icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
         />
-        <StatCard label="Focus Rank" value="Elite" delay={0.2}
-          gradient="from-amber-400 to-orange-500"
+        <StatCard label="Focus Rank" value={isNewUser ? 'Starting' : 'Elite'} delay={0.2} active={!isNewUser}
+          gradient="from-amber-400 to-violet-500"
           icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>}
         />
       </div>
 
+      {isNewUser && <OnboardingCard />}
+
       {/* ── Main Grid ── */}
-      <div className="grid lg:grid-cols-3 gap-5">
+      <div className={`grid lg:grid-cols-3 gap-5 ${isNewUser ? 'hidden' : ''}`}>
 
         {/* Left column */}
         <div className="lg:col-span-2 space-y-5">
@@ -224,7 +260,7 @@ export default function DashboardPage() {
                 <h2 className="text-lg font-black text-slate-900 dark:text-white">Learning Momentum</h2>
                 <p className="text-sm text-slate-400 dark:text-white/30 font-medium mt-0.5">Topic completion distribution</p>
               </div>
-              <span className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 py-1 rounded-full text-[10px] font-bold border border-emerald-500/20">
+                <span className="bg-primary-500/10 text-primary-600 dark:text-primary-300 px-3 py-1 rounded-full text-[10px] font-bold border border-primary-500/20">
                 LIVE
               </span>
             </div>
@@ -281,8 +317,8 @@ export default function DashboardPage() {
                 <BarChart data={studyStats} barCategoryGap="30%">
                   <defs>
                     <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#6366f1" stopOpacity={1} />
-                      <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.6} />
+                      <stop offset="0%" stopColor="#397b55" stopOpacity={1} />
+                      <stop offset="100%" stopColor="#cf7548" stopOpacity={0.6} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridColor} />
@@ -380,7 +416,7 @@ export default function DashboardPage() {
           </Card>
 
           {/* Pomodoro */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+          <motion.div ref={pomodoroRef} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
             <PomodoroTimer />
           </motion.div>
         </div>

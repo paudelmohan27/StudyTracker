@@ -3,8 +3,8 @@ import api from '../services/api';
 import StudySessionService from '../services/studySessionService';
 
 const MODES = [
-  { key: 'focus',   label: 'Focus',       minutes: 25, color: '#6366f1', icon: '🎯' },
-  { key: 'short',   label: 'Short Break', minutes: 5,  color: '#10b981', icon: '☕' },
+  { key: 'focus',   label: 'Focus',       minutes: 25, color: '#397b55', icon: '🎯' },
+  { key: 'short',   label: 'Short Break', minutes: 5,  color: '#d3a342', icon: '☕' },
   { key: 'long',    label: 'Long Break',  minutes: 15, color: '#0ea5e9', icon: '🌊' },
 ];
 
@@ -87,13 +87,18 @@ export default function PomodoroTimer() {
       const duration = mode.minutes;
       const startTime = focusStartTimeRef.current || new Date(endTime.getTime() - duration * 60 * 1000);
 
-      StudySessionService.create({
-        subject: selectedSubject || null,
-        duration,
-        startTime,
-        endTime,
-        type: 'FOCUS'
-      }).catch(() => {});
+      // Sessions can be run without a subject, but the current data model
+      // only persists sessions that belong to one. Avoid sending an invalid
+      // request while still allowing the timer to be used as a quick focus tool.
+      if (selectedSubject) {
+        StudySessionService.create({
+          subject: selectedSubject,
+          duration,
+          startTime,
+          endTime,
+          type: 'FOCUS'
+        }).catch(() => {});
+      }
       
       focusStartTimeRef.current = null;
 

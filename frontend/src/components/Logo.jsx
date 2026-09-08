@@ -8,8 +8,8 @@ const Logo = ({ iconSize = "w-10 h-10", showText = false }) => {
         <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-xl" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#06b6d4" />
-              <stop offset="100%" stopColor="#3b82f6" />
+              <stop offset="0%" stopColor="#2f6848" />
+              <stop offset="100%" stopColor="#cf7548" />
             </linearGradient>
           </defs>
           

@@ -279,24 +279,12 @@ export default function SettingsPage() {
           </svg>
         }
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-6">
           <div>
-            <p className="font-bold text-slate-900 dark:text-white text-sm">Dark Mode</p>
-            <p className="text-xs text-slate-400 dark:text-white/30 font-medium mt-0.5">Switch between light and dark themes</p>
+            <p className="font-bold text-slate-900 dark:text-white text-sm">Sunlit workspace</p>
+            <p className="text-xs text-slate-400 dark:text-white/30 font-medium mt-0.5">Warm paper tones keep long study sessions calm and readable.</p>
           </div>
-          <button
-            id="dark-mode-toggle"
-            onClick={() => handleDarkToggle(!darkMode)}
-            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-300 ${
-              darkMode ? 'bg-primary-600' : 'bg-slate-200 dark:bg-white/10'
-            }`}
-          >
-            <span
-              className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform duration-300 ${
-                darkMode ? 'translate-x-6' : 'translate-x-1'
-              }`}
-            />
-          </button>
+          <span className="shrink-0 rounded-full border border-primary-400/20 bg-primary-400/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-primary-300">Active</span>
         </div>
       </SettingsSection>
 

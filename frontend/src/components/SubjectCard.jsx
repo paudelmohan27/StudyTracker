@@ -26,7 +26,7 @@ export default function SubjectCard({ subject, onEdit, onDelete }) {
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const accentColor = color || '#6366f1';
+  const accentColor = color || '#00d9c0';
 
   return (
     <div

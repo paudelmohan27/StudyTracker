@@ -55,7 +55,7 @@ export default function Sidebar() {
             transition={{ type: 'spring', stiffness: 400, damping: 15 }}
             className="flex items-center gap-3"
           >
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-violet-600 flex items-center justify-center shadow-lg shadow-primary-500/25">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-400 to-primary-700 flex items-center justify-center shadow-lg shadow-primary-500/25">
               <Logo iconSize="w-6 h-6" showText={false} />
             </div>
             <div>
@@ -82,7 +82,7 @@ export default function Sidebar() {
                 transition={{ type: 'spring', stiffness: 400, damping: 20 }}
                 className={`relative flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold cursor-pointer transition-all duration-200 ${
                   isActive
-                    ? 'bg-gradient-to-r from-primary-600 to-violet-600 text-white shadow-lg shadow-primary-500/20'
+                    ? 'bg-gradient-to-r from-primary-500 to-primary-700 text-white shadow-lg shadow-primary-500/20'
                     : 'text-slate-500 dark:text-white/40 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -90,7 +90,7 @@ export default function Sidebar() {
                 {isActive && (
                   <motion.div
                     layoutId="nav-pill"
-                    className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary-600 to-violet-600"
+                    className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary-500 to-primary-700"
                     style={{ zIndex: -1 }}
                     transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                   />
@@ -112,7 +112,7 @@ export default function Sidebar() {
         <div className="rounded-2xl p-3 flex items-center gap-3 border"
           style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
         >
-          <div className="w-9 h-9 rounded-xl overflow-hidden bg-gradient-to-br from-primary-500 to-violet-600 flex items-center justify-center text-white text-sm font-black shrink-0 border-2 border-white/20">
+          <div className="w-9 h-9 rounded-xl overflow-hidden bg-gradient-to-br from-primary-400 to-primary-700 flex items-center justify-center text-white text-sm font-black shrink-0 border-2 border-white/20">
             {user?.avatar
               ? <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
               : user?.name?.[0]?.toUpperCase() || 'U'

@@ -22,7 +22,7 @@
     "react-hot-toast": "^2.6.0",
     "react-image-crop": "^11.0.10",
     "react-loading-skeleton": "^3.5.0",
-    "react-router-dom": "^6.23.1",
+    "react-router-dom": "^7.18.3",
     "recharts": "^2.12.7"
   },
   "devDependencies": {

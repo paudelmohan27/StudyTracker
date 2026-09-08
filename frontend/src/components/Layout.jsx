@@ -18,7 +18,7 @@ export default function Layout() {
       {/* Ambient background glow orbs */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute top-0 right-0 w-[700px] h-[500px] bg-primary-600/5 dark:bg-primary-600/8 rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 left-64 w-[500px] h-[400px] bg-violet-600/4 dark:bg-violet-600/6 rounded-full blur-[120px]" />
+        <div className="absolute bottom-0 left-64 w-[500px] h-[400px] bg-rose-500/4 dark:bg-rose-500/8 rounded-full blur-[120px]" />
       </div>
 
       <Sidebar />

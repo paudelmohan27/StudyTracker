@@ -8,21 +8,21 @@
 /* ── Custom scrollbar ─────────────────────────── */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.25); border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(99,102,241,0.5); }
+::-webkit-scrollbar-thumb { background: rgba(57,123,85,0.3); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(57,123,85,0.55); }
 
 /* ── Base styles ─────────────────────────────── */
 @layer base {
   :root {
-    --sidebar-bg: rgba(255, 255, 255, 0.6);
-    --sidebar-border: rgba(226, 232, 240, 0.8);
-    --card-bg: rgba(255, 255, 255, 0.8);
-    --card-border: rgba(226, 232, 240, 0.6);
-    --page-bg: #f1f5f9;
-    --page-bg2: #e2e8f0;
-    --toast-bg: #ffffff;
-    --toast-text: #111827;
-    --toast-border: #f3f4f6;
+    --sidebar-bg: rgba(250, 247, 238, 0.88);
+    --sidebar-border: rgba(39, 56, 43, 0.11);
+    --card-bg: rgba(255, 253, 247, 0.82);
+    --card-border: rgba(39, 56, 43, 0.12);
+    --page-bg: #f4efe5;
+    --page-bg2: #ebe3d4;
+    --toast-bg: #fffdf7;
+    --toast-text: #1f2a22;
+    --toast-border: rgba(39,56,43,0.12);
   }
   .dark {
     --sidebar-bg: rgba(10, 12, 20, 0.95);
@@ -43,10 +43,7 @@
     @apply antialiased selection:bg-primary-500/30;
     font-family: 'Outfit', sans-serif;
     background: var(--page-bg);
-    color: #0f172a;
-  }
-  .dark body, .dark {
-    color: #e2e8f0;
+    color: #1f2a22;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Plus Jakarta Sans', sans-serif;
@@ -71,15 +68,15 @@
   }
 
   .btn-primary {
-    @apply bg-gradient-to-r from-primary-600 to-violet-600 hover:from-primary-500 hover:to-violet-500 
+    @apply bg-gradient-to-r from-primary-600 to-primary-800 hover:from-primary-500 hover:to-primary-700
            text-white font-bold px-6 py-3 rounded-2xl transition-all duration-300 
-           active:scale-[0.97] shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 
+           active:scale-[0.97] shadow-lg shadow-primary-500/20 hover:shadow-primary-500/40
            flex items-center justify-center gap-2;
   }
 
   .btn-secondary {
-    @apply bg-white/80 dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10
-           border border-slate-200/80 dark:border-white/10
+    @apply bg-white/80 dark:bg-white/[0.04] hover:bg-slate-50 dark:hover:bg-primary-500/10
+           border border-slate-200/80 dark:border-white/[0.10]
            text-slate-700 dark:text-slate-200 font-semibold px-6 py-3 rounded-2xl 
            transition-all duration-300 active:scale-[0.97] flex items-center justify-center gap-2;
   }
@@ -116,8 +113,8 @@
   50% { transform: translateY(-14px); }
 }
 
-.gradient-text {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-400 to-violet-400;
+  .gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-violet-500;
 }
 
 /* Ambient glow utility */
