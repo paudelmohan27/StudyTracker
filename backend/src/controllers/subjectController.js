@@ -89,9 +89,13 @@ const getSubject = async (req, res, next) => {
  */
 const updateSubject = async (req, res, next) => {
   try {
+    const updateData = { ...req.body };
+    if (updateData.examDate === '') {
+      updateData.examDate = null;
+    }
     const subject = await Subject.findOneAndUpdate(
       { _id: req.params.id, user: req.user._id },
-      req.body,
+      updateData,
       { new: true, runValidators: true }
     );
     if (!subject) {

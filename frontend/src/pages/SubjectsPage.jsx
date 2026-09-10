@@ -11,32 +11,32 @@ import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { useAuth } from '../context/AuthContext';
 
-const COLORS = ['#397b55','#cf7548','#d3a342','#b94d42','#6f8565','#5f7d70','#bd8258','#9a7048'];
-const ICONS  = ['📚','🔬','🧮','🏛️','🌍','💻','🎨','🎵','⚗️','📐','🧬','📖'];
+const COLORS = ['#397b55', '#cf7548', '#d3a342', '#b94d42', '#6f8565', '#5f7d70', '#bd8258', '#9a7048'];
+const ICONS = ['📚', '🔬', '🧮', '🏛️', '🌍', '💻', '🎨', '🎵', '⚗️', '📐', '🧬', '📖'];
 
 const defaultForm = { name: '', description: '', color: COLORS[0], examDate: '', icon: ICONS[0] };
 
 const SORT_OPTIONS = [
-  { value: 'custom',   label: 'Custom Order' },
-  { value: 'newest',  label: 'Newest First' },
-  { value: 'name',    label: 'Alphabetical' },
-  { value: 'progress',label: 'Highest Progress' },
-  { value: 'exam',    label: 'Nearest Exam' },
+  { value: 'custom', label: 'Custom Order' },
+  { value: 'newest', label: 'Newest First' },
+  { value: 'name', label: 'Alphabetical' },
+  { value: 'progress', label: 'Highest Progress' },
+  { value: 'exam', label: 'Nearest Exam' },
 ];
 
 export default function SubjectsPage() {
   const { user } = useAuth();
-  const [subjects, setSubjects]   = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState('');
+  const [subjects, setSubjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing]     = useState(null);
-  const [form, setForm]           = useState(defaultForm);
-  const [saving, setSaving]       = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState(defaultForm);
+  const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
-  const [deleteId, setDeleteId]   = useState(null);
-  const [search, setSearch]       = useState('');
-  const [sortBy, setSortBy]       = useState('custom');
+  const [deleteId, setDeleteId] = useState(null);
+  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState('custom');
 
   const isDark = user?.darkMode;
 
@@ -96,10 +96,14 @@ export default function SubjectsPage() {
     setSaving(true);
     setFormError('');
     try {
+      const payload = {
+        ...form,
+        examDate: form.examDate ? new Date(form.examDate).toISOString() : null,
+      };
       if (editing) {
-        await api.put(`/api/subjects/${editing._id}`, form);
+        await api.put(`/api/subjects/${editing._id}`, payload);
       } else {
-        await api.post('/api/subjects', form);
+        await api.post('/api/subjects', payload);
       }
       setModalOpen(false);
       fetchSubjects();
@@ -139,7 +143,6 @@ export default function SubjectsPage() {
 
   return (
     <div className="space-y-8 pb-10">
-
       {/* ── Header ── */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -175,7 +178,7 @@ export default function SubjectsPage() {
         </motion.button>
       </motion.div>
 
-      {/* ── Toolbar ── */}
+      {/* ── Toolbar ── */ }
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -217,81 +220,83 @@ export default function SubjectsPage() {
         </div>
       </motion.div>
 
-      {/* ── Content ── */}
-      {loading ? (
-        <SkeletonTheme baseColor={isDark ? '#1a2035' : '#e8ecf4'} highlightColor={isDark ? '#243050' : '#f0f4fb'}>
-          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
-            {[1,2,3,4,5,6].map(i => <Skeleton key={i} height={220} borderRadius={20} />)}
-          </div>
-        </SkeletonTheme>
-      ) : error ? (
-        <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          className="rounded-2xl p-10 text-red-500 text-center font-bold border"
-          style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
-        >
-          {error}
-        </motion.div>
-      ) : subjects.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="rounded-2xl border-2 border-dashed flex flex-col items-center py-20 text-center gap-4"
-          style={{ borderColor: 'var(--card-border)', background: 'var(--card-bg)' }}
-        >
-          <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-br from-primary-500/20 to-violet-500/20 flex items-center justify-center text-4xl animate-float border border-primary-500/10">
-            📚
-          </div>
-          <div>
-            <h2 className="text-xl font-black text-slate-900 dark:text-white mb-2">Ready to build your curriculum?</h2>
-            <p className="text-slate-400 dark:text-white/30 text-sm max-w-xs mx-auto">
-              Add your first subject to start tracking progress and stay ahead of every exam date.
-            </p>
-          </div>
-          <motion.button
-            onClick={openCreate}
-            whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-            className="btn-primary mt-2"
-          >
-            Add First Subject
-          </motion.button>
-        </motion.div>
-      ) : filteredAndSorted.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          className="rounded-2xl p-12 text-center"
-          style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
-        >
-          <p className="text-slate-400 dark:text-white/30 font-bold">No subjects match your search.</p>
-        </motion.div>
-      ) : (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={filteredAndSorted.map(s => s._id)} strategy={rectSortingStrategy}>
+      {/* ── Content ── */ }
+      {
+        loading ? (
+          <SkeletonTheme baseColor={isDark ? '#1a2035' : '#e8ecf4'} highlightColor={isDark ? '#243050' : '#f0f4fb'}>
             <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
-              <AnimatePresence>
-                {filteredAndSorted.map((subject, idx) => (
-                  <motion.div
-                    key={subject._id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ delay: idx * 0.05, duration: 0.4 }}
-                  >
-                    <SubjectCard
-                      subject={subject}
-                      onEdit={openEdit}
-                      onDelete={(id) => setDeleteId(id)}
-                    />
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+              {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} height={220} borderRadius={20} />)}
             </div>
-          </SortableContext>
-        </DndContext>
-      )}
+          </SkeletonTheme>
+        ) : error ? (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            className="rounded-2xl p-10 text-red-500 text-center font-bold border"
+            style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
+          >
+            {error}
+          </motion.div>
+        ) : subjects.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="rounded-2xl border-2 border-dashed flex flex-col items-center py-20 text-center gap-4"
+            style={{ borderColor: 'var(--card-border)', background: 'var(--card-bg)' }}
+          >
+            <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-br from-primary-500/20 to-violet-500/20 flex items-center justify-center text-4xl animate-float border border-primary-500/10">
+              📚
+            </div>
+            <div>
+              <h2 className="text-xl font-black text-slate-900 dark:text-white mb-2">Ready to build your curriculum?</h2>
+              <p className="text-slate-400 dark:text-white/30 text-sm max-w-xs mx-auto">
+                Add your first subject to start tracking progress and stay ahead of every exam date.
+              </p>
+            </div>
+            <motion.button
+              onClick={openCreate}
+              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              className="btn-primary mt-2"
+            >
+              Add First Subject
+            </motion.button>
+          </motion.div>
+        ) : filteredAndSorted.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            className="rounded-2xl p-12 text-center"
+            style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
+          >
+            <p className="text-slate-400 dark:text-white/30 font-bold">No subjects match your search.</p>
+          </motion.div>
+        ) : (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={filteredAndSorted.map(s => s._id)} strategy={rectSortingStrategy}>
+              <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                <AnimatePresence>
+                  {filteredAndSorted.map((subject, idx) => (
+                    <motion.div
+                      key={subject._id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ delay: idx * 0.05, duration: 0.4 }}
+                    >
+                      <SubjectCard
+                        subject={subject}
+                        onEdit={openEdit}
+                        onDelete={(id) => setDeleteId(id)}
+                      />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            </SortableContext>
+          </DndContext>
+        )
+      }
 
-      {/* ── Create / Edit Modal ── */}
+      {/* ── Create / Edit Modal ── */ }
       <Modal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -316,11 +321,10 @@ export default function SubjectsPage() {
                   type="button"
                   key={icon}
                   onClick={() => setForm({ ...form, icon })}
-                  className={`text-xl p-2.5 rounded-xl border-2 transition-all duration-200 ${
-                    form.icon === icon
+                  className={`text-xl p-2.5 rounded-xl border-2 transition-all duration-200 ${form.icon === icon
                       ? 'border-primary-500 bg-primary-500/10 scale-110'
                       : 'border-slate-200 dark:border-white/10 hover:border-primary-400 hover:scale-105'
-                  }`}
+                    }`}
                 >
                   {icon}
                 </button>
@@ -375,9 +379,8 @@ export default function SubjectsPage() {
                   type="button"
                   key={c}
                   onClick={() => setForm({ ...form, color: c })}
-                  className={`w-9 h-9 rounded-xl border-4 transition-all duration-200 hover:scale-110 ${
-                    form.color === c ? 'border-slate-900 dark:border-white scale-110 shadow-lg' : 'border-transparent'
-                  }`}
+                  className={`w-9 h-9 rounded-xl border-4 transition-all duration-200 hover:scale-110 ${form.color === c ? 'border-slate-900 dark:border-white scale-110 shadow-lg' : 'border-transparent'
+                    }`}
                   style={{ backgroundColor: c }}
                 />
               ))}
@@ -402,7 +405,7 @@ export default function SubjectsPage() {
         </form>
       </Modal>
 
-      {/* ── Delete Confirmation Modal ── */}
+      {/* ── Delete Confirmation Modal ── */ }
       <Modal isOpen={!!deleteId} onClose={() => setDeleteId(null)} title="Delete Subject">
         <div className="space-y-5">
           <p className="text-slate-600 dark:text-white/60 leading-relaxed">
@@ -414,6 +417,6 @@ export default function SubjectsPage() {
           </div>
         </div>
       </Modal>
-    </div>
+    </div >
   );
 }

@@ -1,0 +1,22 @@
+# StudyTracker
+
+> StudyTracker is a modern, full-stack web application that helps students track their subjects, topics, progress, and exam dates. It includes a Pomodoro timer, countdown timers to exam dates, progress analytics, and drag-and-drop subject management.
+
+## Features
+- Subject & topic management with progress tracking
+- Countdown timers to upcoming exam dates
+- Pomodoro study timer
+- Dashboard with progress analytics and charts
+- Dark/light mode, Google OAuth authentication
+
+## Technology
+- Frontend: React (Vite), Tailwind CSS, Framer Motion
+- Backend: Node.js, Express, MongoDB (Mongoose)
+
+## Public pages
+- Landing page: /
+- Login: /login
+- Register: /register
+
+## Notes
+The app requires authentication to access the main study-tracking features. All authenticated routes (/dashboard, /subjects, /settings) are private.

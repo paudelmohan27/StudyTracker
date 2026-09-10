@@ -1,0 +1,26 @@
+# StudyTracker robots.txt
+# https://www.robotstxt.org/robotstxt.html
+
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /register
+Allow: /forgot-password
+
+# Disallow authenticated app routes
+Disallow: /dashboard
+Disallow: /subjects
+Disallow: /settings
+Disallow: /reset-password
+
+# AI Crawlers — allow landing page only
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+Sitemap: https://tracker.paudelmohan.com.np/sitemap.xml
